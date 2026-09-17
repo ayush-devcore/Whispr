@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Whispr Login</title>
+    <link rel="stylesheet" href="style.css" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    />
+  </head>
+
+  <body>
+    <div class="bg-grid" aria-hidden="true"></div>
+    <div class="glow glow-a" aria-hidden="true"></div>
+    <div class="glow glow-b" aria-hidden="true"></div>
+
+    <div class="container">
+      <div class="left">
+        <div class="logo">
+          <a href="login.html">
+            <img src="logo.png" alt="Whispr" />
+          </a>
+        </div>
+
+        <p class="eyebrow">
+          <span class="eyebrow-dot"></span>End-to-end encrypted &middot; AI
+          monitored
+        </p>
+
+        <h2>Say it plainly.<br />Read it privately.</h2>
+
+        <p class="tagline">
+          Every message is sealed with AES-256 before it leaves your device, and
+          screened by AI for scams and phishing &mdash; so conversations stay
+          fast, and stay yours.
+        </p>
+
+        <div class="features">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div class="feature-content">
+              <h3>End-to-end encryption</h3>
+              <p>AES-256 protection applied to every message, by default.</p>
+            </div>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fa-solid fa-robot"></i></div>
+            <div class="feature-content">
+              <h3>AI threat detection</h3>
+              <p>Phishing, scams, and malicious links are flagged instantly.</p>
+            </div>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fa-solid fa-folder-closed"></i>
+            </div>
+            <div class="feature-content">
+              <h3>Secure file sharing</h3>
+              <p>Documents and media, encrypted the same way messages are.</p>
+            </div>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fa-solid fa-globe"></i></div>
+            <div class="feature-content">
+              <h3>Private group chats</h3>
+              <p>Connect with people worldwide without losing privacy.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <h2>256-bit</h2>
+            <span>AES encryption</span>
+          </div>
+          <div class="stat">
+            <h2>&lt;1s</h2>
+            <span>Threat scan time</span>
+          </div>
+          <div class="stat">
+            <h2>24/7</h2>
+            <span>Always online</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT SECTION -->
+      <div class="right">
+        <div class="card">
+          <h2>Welcome back</h2>
+          <p>Log in to continue your conversations.</p>
+
+          <form>
+            <label for="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              placeholder="name@gmail.com"
+              autocomplete="email"
+            />
+
+            <label for="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+            />
+
+            <div class="forgot">
+              <a href="#">Forgot password?</a>
+            </div>
+
+            <button type="submit" class="login-btn">Log in</button>
+          </form>
+
+          <div class="divider">
+            <hr />
+            <span>or</span>
+            <hr />
+          </div>
+
+          <button class="otp-btn" type="button">
+            <i class="fa-solid fa-key"></i>
+            <span>Log in with OTP</span>
+          </button>
+
+          <p class="signup">New here? <a href="#">Create an account</a></p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

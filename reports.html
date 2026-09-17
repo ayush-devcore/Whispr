@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Whispr Admin — Reports</title>
+    <link rel="stylesheet" href="admin.css" />
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+</head>
+
+<body>
+    <div class="bg-wash"></div>
+    <div class="blob blob-rose"></div>
+    <div class="blob blob-sky"></div>
+    <div class="blob blob-mint"></div>
+    <div class="blob blob-violet"></div>
+
+    <div class="dashboard">
+        <aside class="sidebar">
+            <div class="logo">
+                <a href="admin.html" class="logo-link">
+                    <span class="logo-mark">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L4 5.5V11C4 16.05 7.41 20.74 12 22C16.59 20.74 20 16.05 20 11V5.5L12 2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                            <path d="M9 12L11 14L15.5 9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
+                    <span class="logo-text">Whispr</span>
+                </a>
+            </div>
+            <nav>
+                <a href="admin.html" class="nav-link">
+                    <i class="fa-solid fa-chart-line"></i>
+                    Dashboard
+                </a>
+                <a href="users.html" class="nav-link">
+                    <i class="fa-solid fa-users"></i>
+                    Users
+                </a>
+                <a href="chats.html" class="nav-link">
+                    <i class="fa-solid fa-comments"></i>
+                    Chats
+                </a>
+                <a href="threats.html" class="nav-link">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    Threats
+                </a>
+                <a href="reports.html" class="nav-link active">
+                    <i class="fa-solid fa-file"></i>
+                    Reports
+                </a>
+                <a href="settings.html" class="nav-link">
+                    <i class="fa-solid fa-gear"></i>
+                    Settings
+                </a>
+            </nav>
+            <div class="logout">
+                <a href="login.html" class="nav-link">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Logout
+                </a>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <div class="heading">
+                    <h1>Reports & Analytics</h1>
+                    <p>Platform performance and security trends, at a glance.</p>
+                </div>
+
+                <div class="topbar-right">
+                    <div class="profile">
+                        <div class="notification">
+                            <i class="fa-solid fa-bell bell"></i>
+                            <span class="badge skeleton-badge"></span>
+                        </div>
+                        <div class="avatar-fallback">AD</div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="page-toolbar">
+                <div class="toolbar-filters">
+                    <span class="filter-chip active">Daily</span>
+                    <span class="filter-chip">Weekly</span>
+                    <span class="filter-chip">Monthly</span>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-ghost">
+                        <i class="fa-solid fa-file-csv"></i> Download CSV
+                    </button>
+                    <button class="btn btn-primary">
+                        <i class="fa-solid fa-file-pdf"></i> Download PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- Summary cards -->
+            <section class="report-cards">
+                <!-- TODO: bind from GET /api/admin/reports/summary?period=daily -->
+                <div class="report-card">
+                    <h2 class="skeleton-text skeleton-lg"></h2>
+                    <p class="report-label">Today's Users</p>
+                </div>
+                <div class="report-card">
+                    <h2 class="skeleton-text skeleton-lg"></h2>
+                    <p class="report-label">Today's Messages</p>
+                </div>
+                <div class="report-card">
+                    <h2 class="skeleton-text skeleton-lg"></h2>
+                    <p class="report-label">Threats Blocked</p>
+                </div>
+                <div class="report-card">
+                    <h2 class="skeleton-text skeleton-lg"></h2>
+                    <p class="report-label">Files Shared</p>
+                </div>
+            </section>
+
+            <div class="content-grid">
+
+                <section class="glass-card">
+                    <div class="card-header">
+                        <h2>Messages chart</h2>
+                        <span class="select-box">This week</span>
+                    </div>
+                    <!-- TODO: bind bar heights from GET /api/admin/reports/messages?period=weekly -->
+                    <div class="chart">
+                        <div class="chart-bar" style="--h: 40%"></div>
+                        <div class="chart-bar" style="--h: 55%"></div>
+                        <div class="chart-bar" style="--h: 35%"></div>
+                        <div class="chart-bar" style="--h: 70%"></div>
+                        <div class="chart-bar" style="--h: 50%"></div>
+                        <div class="chart-bar" style="--h: 62%"></div>
+                        <div class="chart-bar" style="--h: 85%"></div>
+                    </div>
+                    <div class="chart-axis">
+                        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                    </div>
+                </section>
+
+                <section class="glass-card">
+                    <div class="card-header">
+                        <h2>Threat graph</h2>
+                        <span class="select-box">This week</span>
+                    </div>
+                    <!-- TODO: bind bar heights from GET /api/admin/reports/threats?period=weekly -->
+                    <div class="chart">
+                        <div class="chart-bar warn" style="--h: 30%"></div>
+                        <div class="chart-bar warn" style="--h: 45%"></div>
+                        <div class="chart-bar warn" style="--h: 20%"></div>
+                        <div class="chart-bar warn" style="--h: 60%"></div>
+                        <div class="chart-bar warn" style="--h: 38%"></div>
+                        <div class="chart-bar warn" style="--h: 25%"></div>
+                        <div class="chart-bar warn" style="--h: 48%"></div>
+                    </div>
+                    <div class="chart-axis">
+                        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                    </div>
+                </section>
+
+            </div>
+
+            <section class="glass-card section-gap" style="margin-top:20px;">
+                <div class="card-header">
+                    <h2>User growth</h2>
+                    <span class="select-box">This month</span>
+                </div>
+                <!-- TODO: bind bar heights from GET /api/admin/reports/user-growth?period=monthly -->
+                <div class="chart" style="height:110px;">
+                    <div class="chart-bar alt" style="--h: 25%"></div>
+                    <div class="chart-bar alt" style="--h: 32%"></div>
+                    <div class="chart-bar alt" style="--h: 40%"></div>
+                    <div class="chart-bar alt" style="--h: 38%"></div>
+                    <div class="chart-bar alt" style="--h: 52%"></div>
+                    <div class="chart-bar alt" style="--h: 61%"></div>
+                    <div class="chart-bar alt" style="--h: 58%"></div>
+                    <div class="chart-bar alt" style="--h: 70%"></div>
+                    <div class="chart-bar alt" style="--h: 78%"></div>
+                    <div class="chart-bar alt" style="--h: 85%"></div>
+                    <div class="chart-bar alt" style="--h: 90%"></div>
+                    <div class="chart-bar alt" style="--h: 96%"></div>
+                </div>
+                <div class="chart-legend">
+                    <span><span class="legend-dot violet"></span> New signups per month</span>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+
+</html>

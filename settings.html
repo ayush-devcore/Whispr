@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Whispr Admin — Settings</title>
+    <link rel="stylesheet" href="admin.css" />
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+</head>
+
+<body>
+    <div class="bg-wash"></div>
+    <div class="blob blob-rose"></div>
+    <div class="blob blob-sky"></div>
+    <div class="blob blob-mint"></div>
+    <div class="blob blob-violet"></div>
+
+    <div class="dashboard">
+        <aside class="sidebar">
+            <div class="logo">
+                <a href="admin.html" class="logo-link">
+                    <span class="logo-mark">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L4 5.5V11C4 16.05 7.41 20.74 12 22C16.59 20.74 20 16.05 20 11V5.5L12 2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                            <path d="M9 12L11 14L15.5 9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
+                    <span class="logo-text">Whispr</span>
+                </a>
+            </div>
+            <nav>
+                <a href="admin.html" class="nav-link">
+                    <i class="fa-solid fa-chart-line"></i>
+                    Dashboard
+                </a>
+                <a href="users.html" class="nav-link">
+                    <i class="fa-solid fa-users"></i>
+                    Users
+                </a>
+                <a href="chats.html" class="nav-link">
+                    <i class="fa-solid fa-comments"></i>
+                    Chats
+                </a>
+                <a href="threats.html" class="nav-link">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    Threats
+                </a>
+                <a href="reports.html" class="nav-link">
+                    <i class="fa-solid fa-file"></i>
+                    Reports
+                </a>
+                <a href="settings.html" class="nav-link active">
+                    <i class="fa-solid fa-gear"></i>
+                    Settings
+                </a>
+            </nav>
+            <div class="logout">
+                <a href="login.html" class="nav-link">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Logout
+                </a>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <div class="heading">
+                    <h1>System Settings</h1>
+                    <p>Manage your admin profile, security, and platform preferences.</p>
+                </div>
+
+                <div class="topbar-right">
+                    <div class="profile">
+                        <div class="notification">
+                            <i class="fa-solid fa-bell bell"></i>
+                            <span class="badge skeleton-badge"></span>
+                        </div>
+                        <div class="avatar-fallback">AD</div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-grid">
+
+                <div style="display:flex; flex-direction:column; gap:20px;">
+
+                    <!-- Profile settings -->
+                    <section class="glass-card">
+                        <div class="card-header">
+                            <h2>Profile settings</h2>
+                        </div>
+
+                        <!-- TODO: bind values from GET /api/admin/profile, submit via PATCH /api/admin/profile -->
+                        <form style="display:flex; flex-direction:column; gap:14px;">
+                            <div>
+                                <label style="display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:6px;">Full name</label>
+                                <input type="text" placeholder="Admin name" style="width:100%; padding:11px 14px; border-radius:12px; border:1px solid var(--glass-border); background:rgba(255,255,255,0.5); font-family:var(--font-body); font-size:13.5px; color:var(--ink);">
+                            </div>
+                            <div>
+                                <label style="display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:6px;">Email</label>
+                                <input type="email" placeholder="admin@whispr.app" style="width:100%; padding:11px 14px; border-radius:12px; border:1px solid var(--glass-border); background:rgba(255,255,255,0.5); font-family:var(--font-body); font-size:13.5px; color:var(--ink);">
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="align-self:flex-start; margin-top:6px;">Save changes</button>
+                        </form>
+                    </section>
+
+                    <!-- Change password -->
+                    <section class="glass-card">
+                        <div class="card-header">
+                            <h2>Change password</h2>
+                        </div>
+
+                        <!-- TODO: submit via POST /api/admin/change-password -->
+                        <form style="display:flex; flex-direction:column; gap:14px;">
+                            <div>
+                                <label style="display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:6px;">Current password</label>
+                                <input type="password" placeholder="••••••••" style="width:100%; padding:11px 14px; border-radius:12px; border:1px solid var(--glass-border); background:rgba(255,255,255,0.5); font-family:var(--font-body); font-size:13.5px; color:var(--ink);">
+                            </div>
+                            <div>
+                                <label style="display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:6px;">New password</label>
+                                <input type="password" placeholder="••••••••" style="width:100%; padding:11px 14px; border-radius:12px; border:1px solid var(--glass-border); background:rgba(255,255,255,0.5); font-family:var(--font-body); font-size:13.5px; color:var(--ink);">
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="align-self:flex-start; margin-top:6px;">Update password</button>
+                        </form>
+                    </section>
+
+                    <!-- System logs -->
+                    <section class="glass-card">
+                        <div class="card-header">
+                            <h2>System logs</h2>
+                            <a href="#">View full log</a>
+                        </div>
+
+                        <!-- TODO: bind from GET /api/admin/system-logs?limit=4 -->
+                        <div class="threat">
+                            <i class="fa-solid fa-clock-rotate-left skeleton-icon"></i>
+                            <div>
+                                <h4 class="skeleton-text skeleton-md"></h4>
+                                <p class="skeleton-text skeleton-sm"></p>
+                            </div>
+                        </div>
+                        <div class="threat">
+                            <i class="fa-solid fa-clock-rotate-left skeleton-icon"></i>
+                            <div>
+                                <h4 class="skeleton-text skeleton-md"></h4>
+                                <p class="skeleton-text skeleton-sm"></p>
+                            </div>
+                        </div>
+                        <div class="threat">
+                            <i class="fa-solid fa-clock-rotate-left skeleton-icon"></i>
+                            <div>
+                                <h4 class="skeleton-text skeleton-md"></h4>
+                                <p class="skeleton-text skeleton-sm"></p>
+                            </div>
+                        </div>
+                    </section>
+
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:20px;">
+
+                    <!-- Toggles -->
+                    <section class="glass-card">
+                        <div class="card-header">
+                            <h2>Platform controls</h2>
+                        </div>
+
+                        <!-- TODO: bind checked state from GET /api/admin/settings, submit each via PATCH /api/admin/settings -->
+                        <div class="setting-row">
+                            <div class="setting-text">
+                                <h4>Email notifications</h4>
+                                <p>Get emailed about critical security events</p>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" checked>
+                                <span class="toggle-track"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-row">
+                            <div class="setting-text">
+                                <h4>AI protection</h4>
+                                <p>Scam and phishing detection on every message</p>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" checked>
+                                <span class="toggle-track"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-row">
+                            <div class="setting-text">
+                                <h4>AES-256 encryption</h4>
+                                <p>Encrypt all messages and files at rest</p>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" checked>
+                                <span class="toggle-track"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-row">
+                            <div class="setting-text">
+                                <h4>Dark mode</h4>
+                                <p>Switch the admin console to dark theme</p>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox">
+                                <span class="toggle-track"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-row">
+                            <div class="setting-text">
+                                <h4>OTP login</h4>
+                                <p>Require a one-time code for admin sign-in</p>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" checked>
+                                <span class="toggle-track"></span>
+                            </label>
+                        </div>
+                    </section>
+
+                    <!-- Backup -->
+                    <section class="glass-card">
+                        <div class="card-header">
+                            <h2>Database backup</h2>
+                        </div>
+                        <p style="font-size:13px; color:var(--ink-soft); margin-bottom:16px;">
+                            <!-- TODO: bind last backup timestamp from GET /api/admin/backup/status -->
+                            Last backup: <span class="skeleton-text skeleton-sm" style="vertical-align:middle;"></span>
+                        </p>
+                        <button class="btn btn-ghost">
+                            <i class="fa-solid fa-database"></i> Backup now
+                        </button>
+                    </section>
+
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>

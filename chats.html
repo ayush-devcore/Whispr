@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Whispr Admin — Chats</title>
+    <link rel="stylesheet" href="admin.css" />
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+</head>
+
+<body>
+    <div class="bg-wash"></div>
+    <div class="blob blob-rose"></div>
+    <div class="blob blob-sky"></div>
+    <div class="blob blob-mint"></div>
+    <div class="blob blob-violet"></div>
+
+    <div class="dashboard">
+        <aside class="sidebar">
+            <div class="logo">
+                <a href="admin.html" class="logo-link">
+                    <span class="logo-mark">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L4 5.5V11C4 16.05 7.41 20.74 12 22C16.59 20.74 20 16.05 20 11V5.5L12 2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                            <path d="M9 12L11 14L15.5 9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
+                    <span class="logo-text">Whispr</span>
+                </a>
+            </div>
+            <nav>
+                <a href="admin.html" class="nav-link">
+                    <i class="fa-solid fa-chart-line"></i>
+                    Dashboard
+                </a>
+                <a href="users.html" class="nav-link">
+                    <i class="fa-solid fa-users"></i>
+                    Users
+                </a>
+                <a href="chats.html" class="nav-link active">
+                    <i class="fa-solid fa-comments"></i>
+                    Chats
+                </a>
+                <a href="threats.html" class="nav-link">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    Threats
+                </a>
+                <a href="reports.html" class="nav-link">
+                    <i class="fa-solid fa-file"></i>
+                    Reports
+                </a>
+                <a href="settings.html" class="nav-link">
+                    <i class="fa-solid fa-gear"></i>
+                    Settings
+                </a>
+            </nav>
+            <div class="logout">
+                <a href="login.html" class="nav-link">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Logout
+                </a>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <div class="heading">
+                    <h1>Chat Monitoring</h1>
+                    <p>Live conversations across the platform, scanned by AI in real time.</p>
+                </div>
+
+                <div class="topbar-right">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" placeholder="Search chats or participants…">
+                    </div>
+                    <div class="profile">
+                        <div class="notification">
+                            <i class="fa-solid fa-bell bell"></i>
+                            <span class="badge skeleton-badge"></span>
+                        </div>
+                        <div class="avatar-fallback">AD</div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="page-toolbar">
+                <div class="toolbar-filters">
+                    <span class="filter-chip active">All chats</span>
+                    <span class="filter-chip">Flagged only</span>
+                    <span class="filter-chip">Group chats</span>
+                    <span class="filter-chip">Direct messages</span>
+                </div>
+            </div>
+
+            <section class="stats section-gap">
+                <!-- TODO: bind from GET /api/admin/chats/summary -->
+                <div class="stat-card">
+                    <div class="stat-icon sky"><i class="fa-solid fa-comments"></i></div>
+                    <div class="stat-info">
+                        <h3>Active Chats</h3>
+                        <h2 class="skeleton-text skeleton-lg"></h2>
+                        <span class="skeleton-text skeleton-sm"></span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon violet"><i class="fa-solid fa-message"></i></div>
+                    <div class="stat-info">
+                        <h3>Messages Today</h3>
+                        <h2 class="skeleton-text skeleton-lg"></h2>
+                        <span class="skeleton-text skeleton-sm"></span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon mint"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div class="stat-info">
+                        <h3>AI Scans Passed</h3>
+                        <h2 class="skeleton-text skeleton-lg"></h2>
+                        <span class="skeleton-text skeleton-sm"></span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon rose"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div class="stat-info">
+                        <h3>Flagged Chats</h3>
+                        <h2 class="skeleton-text skeleton-lg"></h2>
+                        <span class="skeleton-text skeleton-sm"></span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="glass-card">
+                <div class="card-header">
+                    <h2>Live conversations</h2>
+                    <a href="#">Refresh</a>
+                </div>
+
+                <!-- TODO: bind rows from GET /api/admin/chats?search=&filter= -->
+                <div class="chat-row">
+                    <div class="chat-avatars">
+                        <span class="row-avatar skeleton-avatar"></span>
+                        <span class="row-avatar skeleton-avatar"></span>
+                    </div>
+                    <div class="chat-meta">
+                        <span class="skeleton-text skeleton-name" style="display:block; margin-bottom:6px;"></span>
+                        <span class="skeleton-text skeleton-md"></span>
+                    </div>
+                    <span class="skeleton-text skeleton-sm"></span>
+                    <span class="chat-scan clean skeleton-chip"></span>
+                </div>
+
+                <div class="chat-row">
+                    <div class="chat-avatars">
+                        <span class="row-avatar skeleton-avatar"></span>
+                        <span class="row-avatar skeleton-avatar"></span>
+                    </div>
+                    <div class="chat-meta">
+                        <span class="skeleton-text skeleton-name" style="display:block; margin-bottom:6px;"></span>
+                        <span class="skeleton-text skeleton-md"></span>
+                    </div>
+                    <span class="skeleton-text skeleton-sm"></span>
+                    <span class="chat-scan flagged skeleton-chip"></span>
+                </div>
+
+                <div class="chat-row">
+                    <div class="chat-avatars">
+                        <span class="row-avatar skeleton-avatar"></span>
+                        <span class="row-avatar skeleton-avatar"></span>
+                        <span class="row-avatar skeleton-avatar"></span>
+                    </div>
+                    <div class="chat-meta">
+                        <span class="skeleton-text skeleton-name" style="display:block; margin-bottom:6px;"></span>
+                        <span class="skeleton-text skeleton-md"></span>
+                    </div>
+                    <span class="skeleton-text skeleton-sm"></span>
+                    <span class="chat-scan clean skeleton-chip"></span>
+                </div>
+
+                <div class="chat-row">
+                    <div class="chat-avatars">
+                        <span class="row-avatar skeleton-avatar"></span>
+                        <span class="row-avatar skeleton-avatar"></span>
+                    </div>
+                    <div class="chat-meta">
+                        <span class="skeleton-text skeleton-name" style="display:block; margin-bottom:6px;"></span>
+                        <span class="skeleton-text skeleton-md"></span>
+                    </div>
+                    <span class="skeleton-text skeleton-sm"></span>
+                    <span class="chat-scan clean skeleton-chip"></span>
+                </div>
+
+                <!-- Shown only when the chats array from the API is empty -->
+                <div class="empty-state" hidden>
+                    <i class="fa-regular fa-comment-dots"></i>
+                    <p>No active conversations right now</p>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+
+</html>

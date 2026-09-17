@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Whispr Admin — Users</title>
+    <link rel="stylesheet" href="admin.css" />
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+</head>
+
+<body>
+    <div class="bg-wash"></div>
+    <div class="blob blob-rose"></div>
+    <div class="blob blob-sky"></div>
+    <div class="blob blob-mint"></div>
+    <div class="blob blob-violet"></div>
+
+    <div class="dashboard">
+        <aside class="sidebar">
+            <div class="logo">
+                <a href="admin.html" class="logo-link">
+                    <span class="logo-mark">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L4 5.5V11C4 16.05 7.41 20.74 12 22C16.59 20.74 20 16.05 20 11V5.5L12 2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                            <path d="M9 12L11 14L15.5 9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
+                    <span class="logo-text">Whispr</span>
+                </a>
+            </div>
+            <nav>
+                <a href="admin.html" class="nav-link">
+                    <i class="fa-solid fa-chart-line"></i>
+                    Dashboard
+                </a>
+                <a href="users.html" class="nav-link active">
+                    <i class="fa-solid fa-users"></i>
+                    Users
+                </a>
+                <a href="chats.html" class="nav-link">
+                    <i class="fa-solid fa-comments"></i>
+                    Chats
+                </a>
+                <a href="threats.html" class="nav-link">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    Threats
+                </a>
+                <a href="reports.html" class="nav-link">
+                    <i class="fa-solid fa-file"></i>
+                    Reports
+                </a>
+                <a href="settings.html" class="nav-link">
+                    <i class="fa-solid fa-gear"></i>
+                    Settings
+                </a>
+            </nav>
+            <div class="logout">
+                <a href="login.html" class="nav-link">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Logout
+                </a>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <div class="heading">
+                    <h1>User Management</h1>
+                    <p>View, search, and manage every account on Whispr.</p>
+                </div>
+
+                <div class="topbar-right">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" placeholder="Search by name or email…">
+                    </div>
+                    <div class="profile">
+                        <div class="notification">
+                            <i class="fa-solid fa-bell bell"></i>
+                            <span class="badge skeleton-badge"></span>
+                        </div>
+                        <div class="avatar-fallback">AD</div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="page-toolbar">
+                <div class="toolbar-filters">
+                    <span class="filter-chip active">All users</span>
+                    <span class="filter-chip">Online</span>
+                    <span class="filter-chip">Offline</span>
+                    <span class="filter-chip">Flagged</span>
+                    <select class="select-box">
+                        <option>Role: All</option>
+                        <option>Admin</option>
+                        <option>Student</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary">
+                    <i class="fa-solid fa-user-plus"></i> Add user
+                </button>
+            </div>
+
+            <section class="glass-card">
+                <!-- TODO: bind rows from GET /api/admin/users?search=&status=&role=&page= -->
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Role</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="user-cell">
+                                    <span class="row-avatar skeleton-avatar"></span>
+                                    <span class="skeleton-text skeleton-name"></span>
+                                </div>
+                            </td>
+                            <td><span class="skeleton-text skeleton-md"></span></td>
+                            <td><span class="skeleton-chip"></span></td>
+                            <td><span class="skeleton-chip"></span></td>
+                            <td><span class="skeleton-text skeleton-sm"></span></td>
+                            <td>
+                                <div style="display:flex; gap:8px;">
+                                    <button class="btn btn-ghost btn-sm">View</button>
+                                    <button class="btn btn-danger-outline btn-sm">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="user-cell">
+                                    <span class="row-avatar skeleton-avatar"></span>
+                                    <span class="skeleton-text skeleton-name"></span>
+                                </div>
+                            </td>
+                            <td><span class="skeleton-text skeleton-md"></span></td>
+                            <td><span class="skeleton-chip"></span></td>
+                            <td><span class="skeleton-chip"></span></td>
+                            <td><span class="skeleton-text skeleton-sm"></span></td>
+                            <td>
+                                <div style="display:flex; gap:8px;">
+                                    <button class="btn btn-ghost btn-sm">View</button>
+                                    <button class="btn btn-danger-outline btn-sm">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="user-cell">
+                                    <span class="row-avatar skeleton-avatar"></span>
+                                    <span class="skeleton-text skeleton-name"></span>
+                                </div>
+                            </td>
+                            <td><span class="skeleton-text skeleton-md"></span></td>
+                            <td><span class="skeleton-chip"></span></td>
+                            <td><span class="skeleton-chip"></span></td>
+                            <td><span class="skeleton-text skeleton-sm"></span></td>
+                            <td>
+                                <div style="display:flex; gap:8px;">
+                                    <button class="btn btn-ghost btn-sm">View</button>
+                                    <button class="btn btn-danger-outline btn-sm">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="user-cell">
+                                    <span class="row-avatar skeleton-avatar"></span>
+                                    <span class="skeleton-text skeleton-name"></span>
+                                </div>
+                            </td>
+                            <td><span class="skeleton-text skeleton-md"></span></td>
+                            <td><span class="skeleton-chip"></span></td>
+                            <td><span class="skeleton-chip"></span></td>
+                            <td><span class="skeleton-text skeleton-sm"></span></td>
+                            <td>
+                                <div style="display:flex; gap:8px;">
+                                    <button class="btn btn-ghost btn-sm">View</button>
+                                    <button class="btn btn-danger-outline btn-sm">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="user-cell">
+                                    <span class="row-avatar skeleton-avatar"></span>
+                                    <span class="skeleton-text skeleton-name"></span>
+                                </div>
+                            </td>
+                            <td><span class="skeleton-text skeleton-md"></span></td>
+                            <td><span class="skeleton-chip"></span></td>
+                            <td><span class="skeleton-chip"></span></td>
+                            <td><span class="skeleton-text skeleton-sm"></span></td>
+                            <td>
+                                <div style="display:flex; gap:8px;">
+                                    <button class="btn btn-ghost btn-sm">View</button>
+                                    <button class="btn btn-danger-outline btn-sm">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Shown only when the users array from the API is empty -->
+                <div class="empty-state" hidden>
+                    <i class="fa-regular fa-face-smile"></i>
+                    <p>No users match this filter</p>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+
+</html>

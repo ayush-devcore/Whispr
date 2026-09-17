@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Whispr Admin — Threats</title>
+    <link rel="stylesheet" href="admin.css" />
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+</head>
+
+<body>
+    <div class="bg-wash"></div>
+    <div class="blob blob-rose"></div>
+    <div class="blob blob-sky"></div>
+    <div class="blob blob-mint"></div>
+    <div class="blob blob-violet"></div>
+
+    <div class="dashboard">
+        <aside class="sidebar">
+            <div class="logo">
+                <a href="admin.html" class="logo-link">
+                    <span class="logo-mark">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L4 5.5V11C4 16.05 7.41 20.74 12 22C16.59 20.74 20 16.05 20 11V5.5L12 2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                            <path d="M9 12L11 14L15.5 9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
+                    <span class="logo-text">Whispr</span>
+                </a>
+            </div>
+            <nav>
+                <a href="admin.html" class="nav-link">
+                    <i class="fa-solid fa-chart-line"></i>
+                    Dashboard
+                </a>
+                <a href="users.html" class="nav-link">
+                    <i class="fa-solid fa-users"></i>
+                    Users
+                </a>
+                <a href="chats.html" class="nav-link">
+                    <i class="fa-solid fa-comments"></i>
+                    Chats
+                </a>
+                <a href="threats.html" class="nav-link active">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    Threats
+                </a>
+                <a href="reports.html" class="nav-link">
+                    <i class="fa-solid fa-file"></i>
+                    Reports
+                </a>
+                <a href="settings.html" class="nav-link">
+                    <i class="fa-solid fa-gear"></i>
+                    Settings
+                </a>
+            </nav>
+            <div class="logout">
+                <a href="login.html" class="nav-link">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Logout
+                </a>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <div class="heading">
+                    <h1>AI Threat Detection</h1>
+                    <p>Everything Whispr's AI has flagged, blocked, or is watching.</p>
+                </div>
+
+                <div class="topbar-right">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" placeholder="Search threat logs…">
+                    </div>
+                    <div class="profile">
+                        <div class="notification">
+                            <i class="fa-solid fa-bell bell"></i>
+                            <span class="badge skeleton-badge"></span>
+                        </div>
+                        <div class="avatar-fallback">AD</div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="page-toolbar">
+                <div class="toolbar-filters">
+                    <span class="filter-chip active">All severities</span>
+                    <span class="filter-chip">Critical</span>
+                    <span class="filter-chip">Medium</span>
+                    <span class="filter-chip">Low</span>
+                </div>
+            </div>
+
+            <!-- Threat overview -->
+            <section class="glass-card section-gap">
+                <div class="card-header">
+                    <h2>Threat overview</h2>
+                    <span class="select-box">Last 7 days</span>
+                </div>
+
+                <!-- TODO: bind widths/counts from GET /api/admin/threats/breakdown -->
+                <div style="display:flex; flex-direction:column; gap:16px;">
+                    <div style="display:flex; align-items:center; gap:14px;">
+                        <span style="width:110px; font-size:13px; font-weight:600;">Unsafe links</span>
+                        <div style="flex:1; height:10px; border-radius:10px; background:rgba(142,138,166,0.15); overflow:hidden;">
+                            <div class="skeleton-text" style="height:100%; width:70%; border-radius:10px;"></div>
+                        </div>
+                        <span class="skeleton-text skeleton-sm"></span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:14px;">
+                        <span style="width:110px; font-size:13px; font-weight:600;">Spam</span>
+                        <div style="flex:1; height:10px; border-radius:10px; background:rgba(142,138,166,0.15); overflow:hidden;">
+                            <div class="skeleton-text" style="height:100%; width:45%; border-radius:10px;"></div>
+                        </div>
+                        <span class="skeleton-text skeleton-sm"></span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:14px;">
+                        <span style="width:110px; font-size:13px; font-weight:600;">Phishing</span>
+                        <div style="flex:1; height:10px; border-radius:10px; background:rgba(142,138,166,0.15); overflow:hidden;">
+                            <div class="skeleton-text" style="height:100%; width:25%; border-radius:10px;"></div>
+                        </div>
+                        <span class="skeleton-text skeleton-sm"></span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:14px;">
+                        <span style="width:110px; font-size:13px; font-weight:600;">Malware</span>
+                        <div style="flex:1; height:10px; border-radius:10px; background:rgba(142,138,166,0.15); overflow:hidden;">
+                            <div class="skeleton-text" style="height:100%; width:10%; border-radius:10px;"></div>
+                        </div>
+                        <span class="skeleton-text skeleton-sm"></span>
+                    </div>
+                </div>
+            </section>
+
+            <div class="content-grid">
+
+                <!-- Threat history / detection log -->
+                <section class="glass-card">
+                    <div class="card-header">
+                        <h2>Detection log</h2>
+                        <a href="#">View all</a>
+                    </div>
+
+                    <!-- TODO: bind from GET /api/admin/threats/log?severity=&page= -->
+                    <div class="log-item">
+                        <span class="log-marker critical"><i class="fa-solid fa-link-slash"></i></span>
+                        <div class="log-body">
+                            <h4 class="skeleton-text skeleton-md"></h4>
+                            <p class="skeleton-text skeleton-sm"></p>
+                        </div>
+                        <span class="badge-pill critical">Critical</span>
+                    </div>
+                    <div class="log-item">
+                        <span class="log-marker medium"><i class="fa-solid fa-file-shield"></i></span>
+                        <div class="log-body">
+                            <h4 class="skeleton-text skeleton-md"></h4>
+                            <p class="skeleton-text skeleton-sm"></p>
+                        </div>
+                        <span class="badge-pill medium">Medium</span>
+                    </div>
+                    <div class="log-item">
+                        <span class="log-marker low"><i class="fa-solid fa-envelope-circle-check"></i></span>
+                        <div class="log-body">
+                            <h4 class="skeleton-text skeleton-md"></h4>
+                            <p class="skeleton-text skeleton-sm"></p>
+                        </div>
+                        <span class="badge-pill low">Low</span>
+                    </div>
+                    <div class="log-item">
+                        <span class="log-marker critical"><i class="fa-solid fa-virus"></i></span>
+                        <div class="log-body">
+                            <h4 class="skeleton-text skeleton-md"></h4>
+                            <p class="skeleton-text skeleton-sm"></p>
+                        </div>
+                        <span class="badge-pill critical">Critical</span>
+                    </div>
+
+                    <!-- Shown only when the log array from the API is empty -->
+                    <div class="empty-state" hidden>
+                        <i class="fa-solid fa-shield"></i>
+                        <p>No threats logged for this filter</p>
+                    </div>
+                </section>
+
+                <!-- AI confidence snapshot -->
+                <section class="glass-card">
+                    <div class="card-header">
+                        <h2>AI detection confidence</h2>
+                    </div>
+
+                    <!-- TODO: bind from GET /api/admin/threats/latest -->
+                    <div class="threat">
+                        <i class="fa-solid fa-triangle-exclamation skeleton-icon"></i>
+                        <div>
+                            <h4 class="skeleton-text skeleton-md"></h4>
+                            <p class="skeleton-text skeleton-sm"></p>
+                        </div>
+                    </div>
+                    <div class="threat">
+                        <i class="fa-solid fa-link skeleton-icon"></i>
+                        <div>
+                            <h4 class="skeleton-text skeleton-md"></h4>
+                            <p class="skeleton-text skeleton-sm"></p>
+                        </div>
+                    </div>
+                    <div class="threat">
+                        <i class="fa-solid fa-shield-virus skeleton-icon"></i>
+                        <div>
+                            <h4 class="skeleton-text skeleton-md"></h4>
+                            <p class="skeleton-text skeleton-sm"></p>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>

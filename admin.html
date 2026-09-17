@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Whispr Admin Panel</title>
+    <link rel="stylesheet" href="admin.css" />
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+</head>
+
+<body>
+    <div class="bg-wash"></div>
+    <div class="blob blob-rose"></div>
+    <div class="blob blob-sky"></div>
+    <div class="blob blob-mint"></div>
+    <div class="blob blob-violet"></div>
+
+    <div class="dashboard">
+        <aside class="sidebar">
+            <div class="logo">
+                <a href="admin.html" class="logo-link">
+                    <img src="logo.png" alt="Whispr" class="logo-image">
+                </a>
+            </div>
+            <nav>
+                <a href="#" class="nav-link active">
+                    <i class="fa-solid fa-chart-line"></i>
+                    Dashboard
+                </a>
+                <a href="users.html" class="nav-link">
+                    <i class="fa-solid fa-users"></i>
+                    Users
+                </a>
+                <a href="chats.html" class="nav-link">
+                    <i class="fa-solid fa-comments"></i>
+                    Chats
+                </a>
+                <a href="threats.html" class="nav-link">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    Threats
+                </a>
+                <a href="reports.html" class="nav-link">
+                    <i class="fa-solid fa-file"></i>
+                    Reports
+                </a>
+                <a href="settings.html" class="nav-link">
+                    <i class="fa-solid fa-gear"></i>
+                    Settings
+                </a>
+            </nav>
+            <div class="logout">
+                <a href="#" class="nav-link">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Logout
+                </a>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <div class="heading">
+                    <h1>Admin Dashboard</h1>
+                    <p>Welcome back, Admin 👋</p>
+                </div>
+
+                <div class="topbar-right">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" placeholder="Search users, messages, reports…">
+                    </div>
+
+                    <div class="profile">
+                        <div class="notification">
+                            <i class="fa-solid fa-bell bell"></i>
+                            <!-- TODO: bind badge count from GET /api/admin/notifications/unread-count -->
+                            <span class="badge skeleton-badge"></span>
+                        </div>
+                        <!-- TODO: replace initials with admin.avatarUrl from session/user context, fallback to initials -->
+                        <div class="avatar-fallback">AB</div>
+                    </div>
+                </div>
+            </header>
+
+            <section class="stats">
+                <!-- TODO: bind all 4 cards from GET /api/admin/analytics/summary -->
+
+                <div class="stat-card">
+                    <div class="stat-icon rose">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Total Users</h3>
+                        <h2 class="skeleton-text skeleton-lg"></h2>
+                        <span class="skeleton-text skeleton-sm"></span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon sky">
+                        <i class="fa-solid fa-comments"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Messages</h3>
+                        <h2 class="skeleton-text skeleton-lg"></h2>
+                        <span class="skeleton-text skeleton-sm"></span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon violet">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Threats Blocked</h3>
+                        <h2 class="skeleton-text skeleton-lg"></h2>
+                        <span class="skeleton-text skeleton-sm"></span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon mint">
+                        <i class="fa-solid fa-file-arrow-up"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Files Shared</h3>
+                        <h2 class="skeleton-text skeleton-lg"></h2>
+                        <span class="skeleton-text skeleton-sm"></span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="content-grid">
+
+                <!-- Recent Users -->
+                <div class="glass-card">
+
+                    <div class="card-header">
+                        <h2>Recent Users</h2>
+                        <a href="#">View All</a>
+                    </div>
+
+                    <!-- TODO: bind rows from GET /api/admin/users?sort=recent&limit=4 -->
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Status</th>
+                                <th>Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <span class="row-avatar skeleton-avatar"></span>
+                                        <span class="skeleton-text skeleton-name"></span>
+                                    </div>
+                                </td>
+                                <td><span class="skeleton-chip"></span></td>
+                                <td><span class="skeleton-text skeleton-sm"></span></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <span class="row-avatar skeleton-avatar"></span>
+                                        <span class="skeleton-text skeleton-name"></span>
+                                    </div>
+                                </td>
+                                <td><span class="skeleton-chip"></span></td>
+                                <td><span class="skeleton-text skeleton-sm"></span></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <span class="row-avatar skeleton-avatar"></span>
+                                        <span class="skeleton-text skeleton-name"></span>
+                                    </div>
+                                </td>
+                                <td><span class="skeleton-chip"></span></td>
+                                <td><span class="skeleton-text skeleton-sm"></span></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <span class="row-avatar skeleton-avatar"></span>
+                                        <span class="skeleton-text skeleton-name"></span>
+                                    </div>
+                                </td>
+                                <td><span class="skeleton-chip"></span></td>
+                                <td><span class="skeleton-text skeleton-sm"></span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- Shown only when the users array from the API is empty -->
+                    <div class="empty-state" hidden>
+                        <i class="fa-regular fa-face-smile"></i>
+                        <p>No users yet</p>
+                    </div>
+                </div>
+
+                <!-- AI Threat Detection -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <h2>AI Threat Detection</h2>
+                        <a href="#">View All</a>
+                    </div>
+
+                    <!-- TODO: bind list from GET /api/admin/threats/recent?limit=3 -->
+                    <div class="threat">
+                        <i class="fa-solid fa-triangle-exclamation skeleton-icon"></i>
+                        <div>
+                            <h4 class="skeleton-text skeleton-md"></h4>
+                            <p class="skeleton-text skeleton-sm"></p>
+                        </div>
+                    </div>
+                    <div class="threat">
+                        <i class="fa-solid fa-shield-virus skeleton-icon"></i>
+                        <div>
+                            <h4 class="skeleton-text skeleton-md"></h4>
+                            <p class="skeleton-text skeleton-sm"></p>
+                        </div>
+                    </div>
+                    <div class="threat">
+                        <i class="fa-solid fa-lock skeleton-icon"></i>
+                        <div>
+                            <h4 class="skeleton-text skeleton-md"></h4>
+                            <p class="skeleton-text skeleton-sm"></p>
+                        </div>
+                    </div>
+
+                    <!-- Shown only when the threats array from the API is empty -->
+                    <div class="empty-state" hidden>
+                        <i class="fa-solid fa-shield"></i>
+                        <p>No threats detected</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+
+</html>
