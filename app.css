@@ -276,6 +276,38 @@ dialog input,dialog textarea { border:2px solid #111; border-radius:0; backgroun
 .deleted-message { color:#555148; font-style:italic; }
 .message-deleted .message-text { min-width:170px; }
 .send-failed .delivery-state { color:#b42318; }
+.ai-preferences { margin:18px 0; padding:12px; border:2px solid #111; }
+.ai-preferences legend { padding:0 6px; font-weight:900; }
+.ai-preferences p,.ai-preferences small { color:#39362f; font-size:.82rem; line-height:1.45; }
+.ai-preferences>label { display:flex; align-items:flex-start; gap:8px; font-weight:800; }
+.ai-preference-grid { display:grid; grid-template-columns:1fr; gap:5px; margin-top:10px; }
+.ai-preference-grid label { display:flex; align-items:flex-start; gap:8px; font-size:.86rem; }
+.ai-preferences input[type="checkbox"] { flex:0 0 18px; width:18px; height:18px; margin:2px 0; padding:0; accent-color:#7c3aed; }
+#profile-dialog { width:min(94vw,600px); max-height:90dvh; overflow-y:auto; }
+#ai-dialog { width:min(94vw,760px); max-height:88dvh; overflow-y:auto; }
+.ai-toolbox { min-width:min(540px,80vw); }
+.ai-toolbox h2 { margin-top:0; }
+.ai-toolbox>p { line-height:1.45; color:#39362f; }
+.ai-tool-actions { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; }
+.ai-tool-actions button,.ai-search-row button,#ai-close { min-height:42px; padding:8px 12px; border:2px solid #111; background:#d7ff00; color:#111; font-weight:800; cursor:pointer; }
+.ai-search-row { display:flex; gap:8px; margin:8px 0 12px; }
+.ai-search-row input { flex:1; min-width:0; }
+#ai-results { max-height:38vh; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; padding:12px; border:2px solid #111; background:#fffdf7; font: .85rem/1.5 ui-monospace,monospace; }
+.ai-search-result { display:block; width:100%; margin:4px 0; padding:8px; border:1px solid #111; background:#fff; color:#111; text-align:left; cursor:pointer; }
+.ai-search-result:hover { background:#d7ff00; }
+.ai-search-highlight { outline:3px solid #7c3aed; outline-offset:3px; }
+.scam-warning { margin:8px 0 2px; padding:7px; border:2px solid #b7791f; background:#fff4d6; color:#111; font-size:.78rem; }
+.scam-warning.high-risk { border-color:#b42318; background:#ffe2df; }
+.scam-warning summary { font-weight:900; cursor:pointer; }
+.scam-warning p { margin:6px 0; overflow-wrap:anywhere; }
+.scam-warning small { color:#39362f; }
+.scam-actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.scam-actions button { padding:5px 8px; border:1px solid #111; background:#fffdf7; color:#111; font-weight:800; cursor:pointer; }
+.scam-actions button:hover { background:#d7ff00; }
+.smart-reply-tray { position:absolute; z-index:10; right:12px; bottom:calc(100% + 8px); left:12px; display:flex; flex-wrap:wrap; gap:7px; max-height:110px; overflow:auto; padding:8px; border:2px solid #111; background:#fffdf7; box-shadow:4px 4px 0 #111; }
+.smart-reply-tray[hidden] { display:none; }
+.smart-reply-tray button { max-width:100%; padding:7px 10px; border:1px solid #111; background:#d7ff00; color:#111; text-align:left; font-weight:700; cursor:pointer; }
+@media(max-width:520px) { .ai-toolbox { min-width:0; } .ai-search-row { flex-direction:column; } }
 .chat-item-top small,.msg-meta time { flex:none; color:#39362f; }
 button:disabled { opacity:.62; cursor:not-allowed; filter:grayscale(.4); }
 .icon-btn-round,.icon-btn-flat,.new-chat-btn,.send-btn,.back-button { color:#111; }
@@ -376,3 +408,7 @@ body { height:var(--app-height,100dvh); overflow:hidden; }
   #call-dialog.group-call.audio-only .group-call-tile { min-height:130px; }
   .group-call-name { right:5px; bottom:5px; max-width:calc(100% - 10px); padding:4px 6px; font-size:.72rem; }
 }
+.group-member-list { display: grid; gap: .45rem; margin: 1rem 0; text-align: left; }
+.group-member-row { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .45rem .55rem; border: 1px solid var(--line, #222); border-radius: .55rem; }
+.group-member-row button, #manage-group-add, #leave-group { min-height: 2rem; padding: .35rem .65rem; border: 1px solid currentColor; border-radius: .4rem; background: transparent; color: inherit; cursor: pointer; }
+#leave-group { margin-top: .6rem; color: #b42318; }

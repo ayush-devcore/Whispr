@@ -8,6 +8,7 @@ function setMode() {
     ? "Start a private conversation."
     : "Log in to continue your conversations.";
   $("#name").hidden = $("#name-label").hidden = !register;
+  $("#admin-bootstrap-token").hidden = $("#bootstrap-label").hidden = $("#bootstrap-hint").hidden = !register;
   $("#auth-submit").textContent = register ? "Create account" : "Log in";
   $("#switch-copy").innerHTML = register
     ? 'Already have an account? <a href="#" id="switch-auth">Log in</a>'
@@ -24,6 +25,7 @@ $("#auth-form").addEventListener("submit", async (e) => {
   error.textContent = "";
   const payload = { email: $("#email").value, password: $("#password").value };
   if (register) payload.name = $("#name").value;
+  if (register && $("#admin-bootstrap-token").value) payload.adminBootstrapToken = $("#admin-bootstrap-token").value;
   try {
     const r = await fetch(`/api/auth/${register ? "register" : "login"}`, {
       method: "POST",

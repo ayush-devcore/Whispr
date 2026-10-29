@@ -14,7 +14,7 @@ const api = async (url, options = {}) => {
   return result;
 };
 
-let me, chats = [], activeChat = null, selectedUsers = [], call = null, incomingCall = null, voiceRecorder = null, voiceStream = null, voiceChunks = [], ringTimer = null, ringAudioContext = null, callNotification = null, pushSubscribed = false, serviceWorkerRegistration = null;
+let me, chats = [], activeChat = null, selectedUsers = [], call = null, incomingCall = null, voiceRecorder = null, voiceStream = null, voiceChunks = [], ringTimer = null, ringAudioContext = null, callNotification = null, pushSubscribed = false, serviceWorkerRegistration = null, aiPrefs = { enabled: false }, aiConfigured = false;
 const earlyIce = new Map();
 const socket = io({ auth: { token }, reconnection: true, reconnectionAttempts: Infinity });
 socket.on('connect_error', (error) => { if (/unauthorized/i.test(error.message)) { localStorage.removeItem('whispr_token'); location.replace('login.html'); } else toast('Live connection lost. Retrying…', 'error'); });
@@ -44,12 +44,18 @@ async function loadChats() {
 function renderHeader() {
   if (!activeChat) return;
   const other = activeChat.participants.find((participant) => participant.id !== me.id);
-  $('#chat-header').innerHTML = `<button class="back-button" id="back-to-chats" aria-label="Back to chats">‹</button><span class="chat-main-who"><span class="chat-item-avatar"><span class="avatar-ph">${avatarMarkup(other || { name: activeChat.title })}</span><i class="status-dot ${activeChat.online ? 'online' : 'away'}"></i></span><span><b class="chat-main-name">${esc(activeChat.title)}</b><small class="chat-main-status">${activeChat.isGroup ? `${activeChat.participants.length} members` : activeChat.online ? 'Online' : 'Offline'}</small></span></span><span class="chat-main-actions"><button class="icon-btn-round" id="voice-call" aria-label="Start ${activeChat.isGroup ? 'group ' : ''}voice call" title="${activeChat.isGroup ? 'Start group voice call' : 'Start voice call'}"><i class="fa-solid fa-phone"></i></button><button class="icon-btn-round" id="video-call" aria-label="Start ${activeChat.isGroup ? 'group ' : ''}video call" title="${activeChat.isGroup ? 'Start group video call' : 'Start video call'}"><i class="fa-solid fa-video"></i></button><button class="icon-btn-round" id="chat-info" aria-label="Conversation info"><i class="fa-solid fa-circle-info"></i></button></span>`;
+  $('#chat-header').innerHTML = `<button class="back-button" id="back-to-chats" aria-label="Back to chats">‹</button><span class="chat-main-who"><span class="chat-item-avatar"><span class="avatar-ph">${avatarMarkup(other || { name: activeChat.title })}</span><i class="status-dot ${activeChat.online ? 'online' : 'away'}"></i></span><span><b class="chat-main-name">${esc(activeChat.title)}</b><small class="chat-main-status">${activeChat.isGroup ? `${activeChat.participants.length} members` : activeChat.online ? 'Online' : 'Offline'}</small></span></span><span class="chat-main-actions"><button class="icon-btn-round" id="voice-call" aria-label="Start ${activeChat.isGroup ? 'group ' : ''}voice call" title="${activeChat.isGroup ? 'Start group voice call' : 'Start voice call'}"><i class="fa-solid fa-phone"></i></button><button class="icon-btn-round" id="video-call" aria-label="Start ${activeChat.isGroup ? 'group ' : ''}video call" title="${activeChat.isGroup ? 'Start group video call' : 'Start video call'}"><i class="fa-solid fa-video"></i></button><button class="icon-btn-round ai-header-button" id="ai-tools" aria-label="AI conversation tools" title="AI conversation tools"><i class="fa-solid fa-wand-magic-sparkles"></i></button><button class="icon-btn-round" id="chat-info" aria-label="Conversation info"><i class="fa-solid fa-circle-info"></i></button></span>`;
   $('#message-input').disabled = $('#file-button').disabled = $('#voice-record').disabled = $('#emoji-toggle').disabled = $('.send-btn').disabled = $('#report').disabled = false;
   $('#back-to-chats').onclick = () => $('.chat-shell').classList.remove('chat-open');
   $('#voice-call').onclick = () => startCall(false);
   $('#video-call').onclick = () => startCall(true);
+  $('#ai-tools').onclick = () => { $('#ai-dialog-note').textContent = aiConfigured ? (aiPrefs.enabled ? 'Only the selected messages and bounded context needed for each tool will be processed.' : 'AI tools are off. Review consent and enable specific features in your profile.') : 'The AI provider is not configured on the server. The server owner must configure a key for the selected provider.'; $('#ai-dialog').showModal(); };
   $('#chat-info').onclick = () => $('.chat-profile').classList.toggle('mobile-visible');
+}
+function updateAIControls() {
+  const enabled = aiPrefs.enabled && aiConfigured;
+  $('#rewrite-draft').disabled = !enabled || !aiPrefs.rewriting || !activeChat;
+  for (const [id, preference] of [['ai-summarize', 'summaries'], ['ai-actions', 'actionExtraction'], ['ai-smart-replies', 'smartReplies'], ['ai-search', 'naturalSearch']]) $(`#${id}`).disabled = !enabled || !aiPrefs[preference];
 }
 function renderMessage(message) {
   const mine = message.senderId === me.id;
@@ -59,9 +65,11 @@ function renderMessage(message) {
   const status = recipients.length && recipients.every((id) => readBy.includes(id)) ? 'seen' : recipients.length && recipients.every((id) => deliveredTo.includes(id)) ? 'delivered' : 'sent';
   const statusMarkup = status === 'seen' ? '<span class="message-ticks seen" role="img" aria-label="Seen" title="Seen">✓✓</span>' : status === 'delivered' ? '<span class="message-ticks" role="img" aria-label="Delivered" title="Delivered">✓✓</span>' : '<span class="message-ticks" role="img" aria-label="Sent" title="Sent">✓</span>';
   const body = message.deletedForEveryone ? `<span class="deleted-message"><i class="fa-solid fa-ban" aria-hidden="true"></i> ${mine ? 'You deleted this message' : 'This message was deleted'}</span>` : esc(message.body);
-  const actions = message.pending ? '' : `<details class="message-actions"><summary aria-label="Message options" title="Message options"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></summary><div class="message-action-menu"><button type="button" data-delete-scope="me" data-message-id="${esc(message.id)}">Delete for me</button>${mine && !message.deletedForEveryone ? `<button type="button" data-delete-scope="everyone" data-message-id="${esc(message.id)}">Delete for everyone</button>` : ''}</div></details>`;
+  const actions = message.pending ? '' : `<details class="message-actions"><summary aria-label="Message options" title="Message options"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></summary><div class="message-action-menu">${!mine && aiPrefs.enabled && aiConfigured && aiPrefs.translation && !message.deletedForEveryone ? `<button type="button" data-ai-translate="${esc(message.id)}">Translate…</button>` : ''}${!mine && aiPrefs.enabled && aiConfigured && aiPrefs.scamAnalysis && !message.deletedForEveryone ? `<button type="button" data-ai-analyze="${esc(message.id)}">Check for scam indicators</button>` : ''}<button type="button" data-delete-scope="me" data-message-id="${esc(message.id)}">Delete for me</button>${mine && !message.deletedForEveryone ? `<button type="button" data-delete-scope="everyone" data-message-id="${esc(message.id)}">Delete for everyone</button>` : ''}</div></details>`;
+  const dismissedScam = message.id && sessionStorage.getItem('scam-dismissed-' + message.id) === '1';
+  const scam = message.scamAnalysis && !dismissedScam ? `<details class="scam-warning ${message.scamAnalysis.riskScore >= 65 ? 'high-risk' : ''}"><summary><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> AI risk estimate: ${esc(message.scamAnalysis.severity)} (${message.scamAnalysis.riskScore}/100)</summary><p>${esc(message.scamAnalysis.explanation)}</p><p><b>Evidence:</b> ${esc(message.scamAnalysis.evidence.join(' · ') || 'No verifiable exact evidence returned')}</p><p><b>Next steps:</b> ${esc(message.scamAnalysis.nextSteps.join(' · ') || 'Use your judgment')}</p><small>AI can be wrong. This is not proof of fraud or a safety guarantee.</small><div class="scam-actions"><button type="button" data-dismiss-scam="${esc(message.id)}">Dismiss warning</button><button type="button" data-report-scam>Report conversation</button></div></details>` : '';
   const receipt = mine ? message.pending ? '<small class="delivery-state">Sending…</small>' : `<small class="delivery-state" data-message-status="${esc(message.id)}">${message.failed ? 'Not sent' : statusMarkup}</small>` : '';
-  return `<article class="msg-row ${mine ? 'mine' : ''} ${message.deletedForEveryone ? 'message-deleted' : ''}" data-message-id="${esc(message.id || '')}" data-sender-id="${esc(message.senderId)}" ${clientData}><div class="msg-bubble ${mine ? 'mine' : ''}"><div class="msg-meta"><b>${mine ? 'You' : esc(message.sender?.name || activeChat.title)}</b><time>${clock(message.createdAt)}</time></div><div class="message-text">${body}</div>${receipt}${actions}</div></article>`;
+  return `<article class="msg-row ${mine ? 'mine' : ''} ${message.deletedForEveryone ? 'message-deleted' : ''}" data-message-id="${esc(message.id || '')}" data-sender-id="${esc(message.senderId)}" ${clientData}><div class="msg-bubble ${mine ? 'mine' : ''}"><div class="msg-meta"><b>${mine ? 'You' : esc(message.sender?.name || activeChat.title)}</b><time>${clock(message.createdAt)}</time></div><div class="message-text">${body}</div>${scam}${receipt}${actions}</div></article>`;
 }
 async function markMessagesRead(chatId, messageIds) {
   if (!chatId || !messageIds.length) return;
@@ -114,9 +122,18 @@ async function openChat(chatId) {
   $('#messages').innerHTML = timeline.length ? timeline.map((item) => item.kind === 'file' ? renderFileMessage(item) : renderMessage(item)).join('') : '<p class="empty-state">Start the conversation.</p>';
   $('#messages').scrollTop = $('#messages').scrollHeight;
   markVisibleMessagesRead(chatId);
+  const latestIncoming = [...messages].reverse().find((message) => message.senderId !== me.id);
+  if (latestIncoming) maybeLoadSmartReplies(chatId, latestIncoming.id);
   const other = activeChat.participants.find((participant) => participant.id !== me.id);
-  $('#conversation-info').innerHTML = `<span class="profile-avatar"><span class="avatar-ph">${avatarMarkup(other || { name: activeChat.title })}</span></span><p class="profile-name">${esc(activeChat.title)}</p><p class="profile-status">${esc(other?.bio || 'No about information')}</p><p class="profile-status">${activeChat.participants.map((person) => esc(person.name)).join(' · ')}</p>`;
+  const isGroupAdmin = activeChat.isGroup && (activeChat.adminIds || []).includes(me.id);
+  $('#conversation-info').innerHTML = `<span class="profile-avatar"><span class="avatar-ph">${avatarMarkup(other || { name: activeChat.title })}</span></span><p class="profile-name">${esc(activeChat.title)}</p><p class="profile-status">${activeChat.isGroup ? `${activeChat.participants.length} members` : esc(other?.bio || 'No about information')}</p>${activeChat.isGroup ? `<div class="group-member-list"><b>Members</b>${activeChat.participants.map((person) => `<div class="group-member-row"><span>${esc(person.name)}${(activeChat.adminIds || []).includes(person.id) ? ' · admin' : ''}</span>${isGroupAdmin && person.id !== me.id ? `<button type="button" data-remove-group-member="${esc(person.id)}" aria-label="Remove ${esc(person.name)}">Remove</button>` : ''}</div>`).join('')}</div>${isGroupAdmin ? '<button type="button" id="manage-group-add">Add members</button>' : ''}<button type="button" id="leave-group">Leave group</button>` : ''}`;
+  if (activeChat.isGroup) {
+    $('#manage-group-add')?.addEventListener('click', () => { groupMemberSelection.clear(); $('#group-member-search').value = ''; $('#group-member-results').replaceChildren(); $('#add-group-members').disabled = true; $('#group-members-dialog').showModal(); $('#group-member-search').focus(); });
+    $('#leave-group').onclick = () => leaveGroup(activeChat.id, me.id);
+    $('#conversation-info').querySelectorAll('[data-remove-group-member]').forEach((button) => button.addEventListener('click', () => removeGroupMember(activeChat.id, button.dataset.removeGroupMember)));
+  }
   await renderFiles(sharedFiles);
+  updateAIControls();
 }
 
 $('#message-form').addEventListener('submit', async (event) => {
@@ -137,6 +154,25 @@ $('#message-form').addEventListener('submit', async (event) => {
   }
 });
 $('#messages').addEventListener('click', async (event) => {
+  const dismissScam = event.target.closest('[data-dismiss-scam]');
+  if (dismissScam) { sessionStorage.setItem('scam-dismissed-' + dismissScam.dataset.dismissScam, '1'); dismissScam.closest('.scam-warning')?.remove(); return; }
+  if (event.target.closest('[data-report-scam]')) { $('#report').click(); return; }
+  const analyzeButton = event.target.closest('[data-ai-analyze]');
+  if (analyzeButton) {
+    analyzeButton.disabled = true;
+    try { await api('/api/ai/messages/' + encodeURIComponent(analyzeButton.dataset.aiAnalyze) + '/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); }
+    catch (error) { toast(error.message, 'error'); analyzeButton.disabled = false; }
+    return;
+  }
+  const translateButton = event.target.closest('[data-ai-translate]');
+  if (translateButton) {
+    const language = prompt('Translate this message into which language?'); if (!language?.trim()) return;
+    translateButton.disabled = true;
+    try { const result = await api('/api/ai/translate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messageId: translateButton.dataset.aiTranslate, language: language.trim() }) }); alert(result.translation); }
+    catch (error) { toast(error.message, 'error'); }
+    finally { translateButton.disabled = false; }
+    return;
+  }
   const button = event.target.closest('[data-delete-scope]'); if (!button) return;
   const { deleteScope, messageId } = button.dataset;
   if (deleteScope === 'everyone' && !confirm('Delete this message for everyone in the conversation?')) return;
@@ -165,10 +201,22 @@ socket.on('message:new', (message) => {
     if (pending) pending.outerHTML = renderMessage(message);
     else if (!$(`#messages [data-message-id="${CSS.escape(message.id)}"]`)) appendMessage(renderMessage(message), 'data-message-id', message.id);
     if (message.senderId !== me.id && document.visibilityState === 'visible') markMessagesRead(message.chatId, [message.id]);
+    if (message.senderId !== me.id) maybeLoadSmartReplies(message.chatId, message.id);
   }
   loadChats().catch(() => {});
 });
 socket.on('message:status', updateMessageStatus);
+socket.on('chat:created', () => { loadChats().catch(() => toast('A new conversation could not be loaded. Refresh your chat list and try again.', 'error')); });
+socket.on('group:updated', async ({ chatId }) => { try { await loadChats(); if (activeChat?.id === chatId) await openChat(chatId); } catch (error) { toast(error.message, 'error'); } });
+socket.on('group:removed', async ({ chatId, left }) => { if (activeChat?.id === chatId) { activeChat = null; $('#chat-header').innerHTML = '<div class="empty-header">Choose a conversation</div>'; $('#messages').innerHTML = '<p class="empty-state">Choose a chat or start a new conversation.</p>'; $('.chat-shell').classList.remove('chat-open'); } try { await loadChats(); } catch {} toast(left ? 'You left the group.' : 'You were removed from the group.'); });
+socket.on('ai:scam-analysis:updated', async ({ chatId, messageId }) => {
+  if (chatId !== activeChat?.id) return;
+  try {
+    const messages = await api('/api/chats/' + encodeURIComponent(chatId) + '/messages');
+    const message = messages.find((item) => item.id === messageId); const row = $('#messages [data-message-id="' + CSS.escape(messageId) + '"]');
+    if (message && row) row.outerHTML = renderMessage(message);
+  } catch {}
+});
 socket.on('file:new', async (file) => {
   if (file.chatId !== activeChat?.id) return;
   try { const files = await api(`/api/chats/${file.chatId}/files`); const saved = files.find((item) => item.id === file.id); if (saved) appendMessage(renderFileMessage(saved), 'data-file-id', saved.id); await renderFiles(files); }
@@ -179,6 +227,33 @@ socket.on('typing', ({ chatId, userId, active }) => { if (chatId !== activeChat?
 let typingTimer; $('#message-input').addEventListener('input', () => { if (!activeChat) return; socket.emit('typing', { chatId: activeChat.id, active: true }); clearTimeout(typingTimer); typingTimer = setTimeout(() => socket.emit('typing', { chatId: activeChat.id, active: false }), 1100); });
 
 $('#chat-search').addEventListener('input', renderChats);
+const groupMemberSelection = new Set();
+async function searchGroupPeople() {
+  if (!activeChat?.isGroup) return;
+  const query = $('#group-member-search').value.trim(); const results = await api(`/api/users?q=${encodeURIComponent(query)}`);
+  const candidates = results.filter((person) => !activeChat.memberIds.includes(person.id));
+  $('#group-member-results').innerHTML = candidates.length ? candidates.map((person) => `<button type="button" class="user-result ${groupMemberSelection.has(person.id) ? 'selected' : ''}" data-add-group-user="${esc(person.id)}"><span>${esc(person.name)}</span><small>${esc(person.email)}</small></button>`).join('') : '<p class="list-empty">No people available to add.</p>';
+  $('#group-member-results').querySelectorAll('[data-add-group-user]').forEach((button) => button.addEventListener('click', () => { const id = button.dataset.addGroupUser; groupMemberSelection.has(id) ? groupMemberSelection.delete(id) : groupMemberSelection.add(id); button.classList.toggle('selected', groupMemberSelection.has(id)); $('#add-group-members').disabled = !groupMemberSelection.size; }));
+}
+$('#group-member-search').addEventListener('input', () => searchGroupPeople().catch((error) => toast(error.message, 'error')));
+$('#group-members-form').addEventListener('submit', async (event) => {
+  if (event.submitter?.value === 'cancel') return;
+  event.preventDefault(); if (!activeChat || !groupMemberSelection.size) return;
+  const chatId = activeChat.id; $('#add-group-members').disabled = true;
+  try { await api(`/api/chats/${encodeURIComponent(chatId)}/members`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ memberIds: [...groupMemberSelection] }) }); $('#group-members-dialog').close(); await loadChats(); await openChat(chatId); toast('Members added to the group.'); }
+  catch (error) { toast(error.message, 'error'); $('#add-group-members').disabled = false; }
+});
+async function removeGroupMember(chatId, userId) {
+  if (!confirm('Remove this person from the group?')) return;
+  try { await api(`/api/chats/${encodeURIComponent(chatId)}/members/${encodeURIComponent(userId)}`, { method: 'DELETE' }); await loadChats(); if (activeChat?.id === chatId) await openChat(chatId); }
+  catch (error) { toast(error.message, 'error'); }
+}
+async function leaveGroup(chatId, userId) {
+  if (!confirm('Leave this group? You will no longer see its messages or calls.')) return;
+  try { await api(`/api/chats/${encodeURIComponent(chatId)}/members/${encodeURIComponent(userId)}`, { method: 'DELETE' }); }
+  catch (error) { toast(error.message, 'error'); }
+}
+$('#group-members-form').addEventListener('click', (event) => { if (event.target.value === 'cancel') groupMemberSelection.clear(); });
 document.querySelectorAll('[data-filter]').forEach((button) => button.addEventListener('click', () => { window.chatFilter = button.dataset.filter; document.querySelectorAll('[data-filter]').forEach((item) => item.classList.toggle('active', item === button)); renderChats(); }));
 $('#logout').onclick = async () => { try { const subscription = await serviceWorkerRegistration?.pushManager.getSubscription(); if (subscription) { await api('/api/push/subscriptions', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: subscription.endpoint }) }).catch(() => {}); await subscription.unsubscribe(); } } finally { localStorage.removeItem('whispr_token'); location.replace('login.html'); } };
 function updateNotificationButton() {
@@ -246,8 +321,71 @@ $('#voice-record').onclick = async () => {
 };
 $('#report').onclick = async () => { if (!activeChat) return; const reason = prompt('Why are you reporting this conversation?'); if (reason === null) return; try { await api(`/api/chats/${activeChat.id}/report`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) }); toast('Report sent.'); } catch (error) { toast(error.message, 'error'); } };
 
-$('#profile-button').onclick = () => { $('#profile-name').value = me.name; $('#profile-bio').value = me.bio || ''; $('#avatar-input').value = ''; $('#profile-error').textContent = ''; $('#profile-dialog').showModal(); };
-$('#profile-form').addEventListener('submit', async (event) => { event.preventDefault(); try { me = await api('/api/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: $('#profile-name').value, bio: $('#profile-bio').value }) }); const image = $('#avatar-input').files[0]; if (image) { const data = new FormData(); data.append('avatar', image); me = await api('/api/me/avatar', { method: 'POST', body: data }); } $('#profile-dialog').close(); $('#me-name').textContent = me.name; $('#me-bio').textContent = me.bio || 'Available'; $('#me-initial').innerHTML = avatarMarkup(me); await loadChats(); } catch (error) { $('#profile-error').textContent = error.message; } });
+async function loadAIPreferences() {
+  try {
+    const result = await api('/api/ai/preferences'); aiPrefs = result.preferences || { enabled: false }; aiConfigured = result.configured;
+    $('#ai-consent').checked = !!aiPrefs.enabled;
+    document.querySelectorAll('[data-ai-pref]').forEach((input) => { input.checked = !!aiPrefs[input.dataset.aiPref]; });
+    $('#ai-config-status').textContent = aiConfigured ? 'AI provider configured on the server.' : 'AI features unavailable until the server owner configures the provider key.';
+    updateAIControls();
+  } catch { aiPrefs = { enabled: false }; aiConfigured = false; }
+}
+$('#profile-button').onclick = async () => { $('#profile-name').value = me.name; $('#profile-bio').value = me.bio || ''; $('#avatar-input').value = ''; $('#profile-error').textContent = ''; await loadAIPreferences(); $('#profile-dialog').showModal(); };
+$('#profile-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const prefs = Object.fromEntries([...document.querySelectorAll('[data-ai-pref]')].map((input) => [input.dataset.aiPref, input.checked]));
+  const consent = $('#ai-consent').checked;
+  if (Object.values(prefs).some(Boolean) && !consent) { $('#profile-error').textContent = 'Review and accept the AI processing disclosure before enabling features.'; return; }
+  try {
+    me = await api('/api/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: $('#profile-name').value, bio: $('#profile-bio').value }) });
+    const image = $('#avatar-input').files[0]; if (image) { const data = new FormData(); data.append('avatar', image); me = await api('/api/me/avatar', { method: 'POST', body: data }); }
+    const saved = await api('/api/ai/preferences', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...prefs, enabled: consent, consent }) }); aiPrefs = saved.preferences; aiConfigured = saved.configured;
+    $('#profile-dialog').close(); $('#me-name').textContent = me.name; $('#me-bio').textContent = me.bio || 'Available'; $('#me-initial').innerHTML = avatarMarkup(me); await loadChats(); updateAIControls(); if (activeChat) await openChat(activeChat.id);
+  } catch (error) { $('#profile-error').textContent = error.message; }
+});
+
+function showAIToolResult(value) { $('#ai-results').textContent = typeof value === 'string' ? value : JSON.stringify(value, null, 2); }
+let lastSmartReplyKey = '';
+async function maybeLoadSmartReplies(chatId, messageId) {
+  if (!aiConfigured || !aiPrefs.enabled || !aiPrefs.smartReplies || chatId !== activeChat?.id || !messageId) return;
+  const key = chatId + ':' + messageId; if (lastSmartReplyKey === key) return; lastSmartReplyKey = key;
+  try {
+    const result = await api('/api/ai/smart-replies', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chatId }) });
+    if (chatId !== activeChat?.id || key !== lastSmartReplyKey) return;
+    const tray = $('#smart-reply-tray'); tray.replaceChildren();
+    result.replies.forEach((reply) => { const button = document.createElement('button'); button.type = 'button'; button.textContent = reply; button.onclick = () => { $('#message-input').value = reply; $('#message-input').focus(); tray.hidden = true; }; tray.append(button); });
+    tray.hidden = !result.replies.length;
+  } catch (error) { if (error.status !== 403) console.warn('Smart reply suggestions unavailable.'); }
+}
+async function runAITool(button, url, payload = {}) {
+  if (!activeChat && !url.startsWith('/api/ai/search')) return toast('Open a conversation first.', 'error');
+  button.disabled = true; $('#ai-results').textContent = 'Working…';
+  try { const result = await api(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); showAIToolResult(result); return result; }
+  catch (error) { $('#ai-results').textContent = error.message; toast(error.message, 'error'); }
+  finally { updateAIControls(); }
+}
+$('#ai-summarize').onclick = () => runAITool($('#ai-summarize'), '/api/ai/conversations/' + encodeURIComponent(activeChat.id) + '/summarize');
+$('#ai-actions').onclick = () => runAITool($('#ai-actions'), '/api/ai/conversations/' + encodeURIComponent(activeChat.id) + '/actions');
+$('#ai-search').onclick = async () => {
+  const result = await runAITool($('#ai-search'), '/api/ai/search', { query: $('#ai-search-query').value.trim() });
+  if (!result) return;
+  const output = $('#ai-results'); output.replaceChildren();
+  if (!result.results.length) { output.textContent = 'No relevant messages were found in the searched recent message set.'; return; }
+  for (const hit of result.results) { const button = document.createElement('button'); button.type = 'button'; button.className = 'ai-search-result'; button.textContent = hit.conversation + ' · ' + hit.sender + ' · ' + clock(hit.timestamp) + ' — ' + hit.text; button.onclick = async () => { $('#ai-dialog').close(); await openChat(hit.chatId); const row = $('#messages [data-message-id="' + CSS.escape(hit.id) + '"]'); row?.scrollIntoView({ behavior: 'smooth', block: 'center' }); row?.classList.add('ai-search-highlight'); setTimeout(() => row?.classList.remove('ai-search-highlight'), 1800); }; output.append(button); }
+};
+$('#ai-smart-replies').onclick = async () => {
+  const result = await runAITool($('#ai-smart-replies'), '/api/ai/smart-replies', { chatId: activeChat?.id }); if (!result) return;
+  const tray = $('#smart-reply-tray'); tray.replaceChildren();
+  result.replies.forEach((reply) => { const button = document.createElement('button'); button.type = 'button'; button.textContent = reply; button.onclick = () => { $('#message-input').value = reply; $('#message-input').focus(); tray.hidden = true; }; tray.append(button); });
+  tray.hidden = !result.replies.length; if (!result.replies.length) showAIToolResult('No reply suggestions for the latest conversation context.');
+};
+$('#ai-close').onclick = () => $('#ai-dialog').close();
+$('#rewrite-draft').onclick = async () => {
+  const draft = $('#message-input').value.trim(); if (!draft) return toast('Write a draft first.', 'error');
+  const tone = prompt('Rewrite tone: professional, friendly, concise, or polite', 'friendly'); if (!tone) return;
+  const result = await runAITool($('#rewrite-draft'), '/api/ai/rewrite', { text: draft, tone });
+  if (result?.text && confirm('Replace your draft with this AI rewrite?')) $('#message-input').value = result.text;
+};
 
 function stopRinging() { clearInterval(ringTimer); ringTimer = null; if (callNotification) { callNotification.close(); callNotification = null; } }
 function playRingPattern() {
@@ -432,7 +570,7 @@ document.addEventListener('touchend', (event) => { if (!swipeStart || !$('.chat-
 
 (async () => {
   try {
-    me = await api('/api/me'); $('#me-name').textContent = me.name; $('#me-bio').textContent = me.bio || 'Available'; $('#me-initial').innerHTML = avatarMarkup(me); await loadChats();
+    me = await api('/api/me'); $('#me-name').textContent = me.name; $('#me-bio').textContent = me.bio || 'Available'; $('#me-initial').innerHTML = avatarMarkup(me); await loadAIPreferences(); await loadChats();
     if ('serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && Notification.permission === 'granted') {
       serviceWorkerRegistration = await navigator.serviceWorker.getRegistration('/');
       const subscription = await serviceWorkerRegistration?.pushManager.getSubscription();

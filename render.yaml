@@ -9,6 +9,8 @@ services:
     envVars:
       - key: JWT_SECRET
         generateValue: true
+      - key: ADMIN_BOOTSTRAP_TOKEN
+        sync: false
       - key: DATABASE_URL
         sync: false
       - key: TURN_URL
@@ -20,4 +22,24 @@ services:
       - key: VAPID_PRIVATE_KEY
         sync: false
       - key: VAPID_SUBJECT
+        sync: false
+      - key: AI_ENABLED
+        value: "false"
+      - key: AI_PROVIDER
+        value: openrouter
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: AI_MODEL
+        value: openai/gpt-6-luna
+      - key: AI_REQUEST_TIMEOUT_MS
+        sync: false
+      - key: AI_MAX_OUTPUT_TOKENS
+        sync: false
+      - key: AI_MAX_CONTEXT_MESSAGES
+        sync: false
+      - key: AI_CACHE_TTL_SECONDS
+        sync: false
+      - key: AI_DAILY_USER_LIMIT
         sync: false

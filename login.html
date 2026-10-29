@@ -28,7 +28,7 @@
                         id="email" type="email" autocomplete="email" required placeholder="name@example.com"><label
                         for="password">Password</label><input id="password" type="password"
                         autocomplete="current-password" required minlength="8" placeholder="At least 8 characters">
-                    <p id="auth-error" role="alert"></p><button class="login-btn" type="submit" id="auth-submit">Log
+                    <label id="bootstrap-label" for="admin-bootstrap-token" hidden>Administrator setup token</label><input id="admin-bootstrap-token" type="password" autocomplete="off" placeholder="Only for the initial administrator" hidden><p id="bootstrap-hint" hidden>Enter the one-time setup token provided by the server administrator. Leave blank for a regular account.</p><p id="auth-error" role="alert"></p><button class="login-btn" type="submit" id="auth-submit">Log
                         in</button>
                 </form>
                 <p class="signup" id="switch-copy">New here? <a href="#" id="switch-auth">Create an account</a></p>
