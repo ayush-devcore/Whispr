@@ -65,7 +65,8 @@ function renderMessage(message) {
   const status = recipients.length && recipients.every((id) => readBy.includes(id)) ? 'seen' : recipients.length && recipients.every((id) => deliveredTo.includes(id)) ? 'delivered' : 'sent';
   const statusMarkup = status === 'seen' ? '<span class="message-ticks seen" role="img" aria-label="Seen" title="Seen">✓✓</span>' : status === 'delivered' ? '<span class="message-ticks" role="img" aria-label="Delivered" title="Delivered">✓✓</span>' : '<span class="message-ticks" role="img" aria-label="Sent" title="Sent">✓</span>';
   const body = message.deletedForEveryone ? `<span class="deleted-message"><i class="fa-solid fa-ban" aria-hidden="true"></i> ${mine ? 'You deleted this message' : 'This message was deleted'}</span>` : esc(message.body);
-  const actions = message.pending ? '' : `<details class="message-actions"><summary aria-label="Message options" title="Message options"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></summary><div class="message-action-menu">${!mine && aiPrefs.enabled && aiConfigured && aiPrefs.translation && !message.deletedForEveryone ? `<button type="button" data-ai-translate="${esc(message.id)}">Translate…</button>` : ''}${!mine && aiPrefs.enabled && aiConfigured && aiPrefs.scamAnalysis && !message.deletedForEveryone ? `<button type="button" data-ai-analyze="${esc(message.id)}">Check for scam indicators</button>` : ''}<button type="button" data-delete-scope="me" data-message-id="${esc(message.id)}">Delete for me</button>${mine && !message.deletedForEveryone ? `<button type="button" data-delete-scope="everyone" data-message-id="${esc(message.id)}">Delete for everyone</button>` : ''}</div></details>`;
+  const hasHttpLink = !message.deletedForEveryone && /(?:https?:\\/\\/|www\\.)[^\\s<>"'\x60]+/i.test(message.body || '');
+  const actions = message.pending ? '' : `<details class="message-actions"><summary aria-label="Message options" title="Message options"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></summary><div class="message-action-menu">${!mine && aiPrefs.enabled && aiConfigured && aiPrefs.translation && !message.deletedForEveryone ? `<button type="button" data-ai-translate="${esc(message.id)}">Translate…</button>` : ''}${!mine && aiPrefs.enabled && aiConfigured && aiPrefs.scamAnalysis && !message.deletedForEveryone ? `<button type="button" data-ai-analyze="${esc(message.id)}">Check for scam indicators</button>` : ''}${hasHttpLink && aiPrefs.enabled && aiConfigured && aiPrefs.linkAnalysis ? `<button type="button" data-ai-link-check="${esc(message.id)}">Check link safety</button>` : ''}<button type="button" data-delete-scope="me" data-message-id="${esc(message.id)}">Delete for me</button>${mine && !message.deletedForEveryone ? `<button type="button" data-delete-scope="everyone" data-message-id="${esc(message.id)}">Delete for everyone</button>` : ''}</div></details>`;
   const dismissedScam = message.id && sessionStorage.getItem('scam-dismissed-' + message.id) === '1';
   const scam = message.scamAnalysis && !dismissedScam ? `<details class="scam-warning ${message.scamAnalysis.riskScore >= 65 ? 'high-risk' : ''}"><summary><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> AI risk estimate: ${esc(message.scamAnalysis.severity)} (${message.scamAnalysis.riskScore}/100)</summary><p>${esc(message.scamAnalysis.explanation)}</p><p><b>Evidence:</b> ${esc(message.scamAnalysis.evidence.join(' · ') || 'No verifiable exact evidence returned')}</p><p><b>Next steps:</b> ${esc(message.scamAnalysis.nextSteps.join(' · ') || 'Use your judgment')}</p><small>AI can be wrong. This is not proof of fraud or a safety guarantee.</small><div class="scam-actions"><button type="button" data-dismiss-scam="${esc(message.id)}">Dismiss warning</button><button type="button" data-report-scam>Report conversation</button></div></details>` : '';
   const receipt = mine ? message.pending ? '<small class="delivery-state">Sending…</small>' : `<small class="delivery-state" data-message-status="${esc(message.id)}">${message.failed ? 'Not sent' : statusMarkup}</small>` : '';
@@ -162,6 +163,18 @@ $('#messages').addEventListener('click', async (event) => {
     analyzeButton.disabled = true;
     try { await api('/api/ai/messages/' + encodeURIComponent(analyzeButton.dataset.aiAnalyze) + '/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); }
     catch (error) { toast(error.message, 'error'); analyzeButton.disabled = false; }
+    return;
+  }
+  const linkButton = event.target.closest('[data-ai-link-check]');
+  if (linkButton) {
+    linkButton.disabled = true;
+    try {
+      const result = await api('/api/ai/messages/' + encodeURIComponent(linkButton.dataset.aiLinkCheck) + '/link-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      showAIToolResult(result);
+      $('#ai-dialog-note').textContent = 'Link safety review completed. Whispr did not open or follow the link.';
+      if (!$('#ai-dialog').open) $('#ai-dialog').showModal();
+    } catch (error) { toast(error.message, 'error'); }
+    finally { linkButton.disabled = false; }
     return;
   }
   const translateButton = event.target.closest('[data-ai-translate]');
@@ -453,6 +466,46 @@ function showAIToolResult(value) {
     return;
   }
 
+  if (Array.isArray(value.links)) {
+    const heading = document.createElement('h3');
+    heading.className = 'ai-result-title';
+    heading.textContent = 'Link safety assessment';
+    output.append(heading);
+    for (const item of value.links) {
+      const card = document.createElement('article');
+      card.className = 'ai-link-result ' + (item.severity || 'low');
+      const top = document.createElement('div');
+      top.className = 'ai-link-result-top';
+      const status = document.createElement('strong');
+      status.textContent = (item.severity || 'unknown').toUpperCase() + ' · ' + Number(item.riskScore || 0) + '/100';
+      const host = document.createElement('span');
+      host.textContent = item.hostname || item.url || 'Unrecognized link';
+      top.append(status, host);
+      card.append(top);
+      const url = document.createElement('p');
+      url.className = 'ai-link-url';
+      url.textContent = item.url || '';
+      card.append(url);
+      const explanation = document.createElement('p');
+      explanation.textContent = item.explanation || 'No explanation was returned.';
+      card.append(explanation);
+      if (Array.isArray(item.indicators) && item.indicators.length) {
+        const indicators = document.createElement('p');
+        indicators.className = 'ai-result-evidence';
+        indicators.textContent = 'Indicators: ' + item.indicators.map((entry) => String(entry).replace(/_/g, ' ')).join(' · ');
+        card.append(indicators);
+      }
+      if (Array.isArray(item.recommendations) && item.recommendations.length) {
+        renderAISection(card, 'Recommended precautions', item.recommendations);
+      }
+      output.append(card);
+    }
+    const note = document.createElement('p');
+    note.className = 'ai-result-note';
+    note.textContent = value.note || 'This is an advisory assessment, not proof that a link is safe or malicious.';
+    output.append(note);
+    return;
+  }
   output.textContent = JSON.stringify(value, null, 2);
 }
 let lastSmartReplyKey = '';
