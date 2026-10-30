@@ -338,6 +338,11 @@ browserTest('Whispr browser journeys with synthetic users and fake media devices
   await alice.page.locator('#messages .inline-video').last().evaluate((video) => video.play());
   assert.equal(await alice.page.locator('#messages .inline-video').last().evaluate((video) => !video.paused), true);
 
+  const blockedExecutableResponse = alice.page.waitForResponse((response) => new URL(response.url()).pathname.endsWith('/files') && response.status() === 415);
+  await alice.page.locator('#file-input').setInputFiles({ name: 'synthetic-installer.exe', mimeType: 'application/octet-stream', buffer: Buffer.from([0x4d, 0x5a, 0x90, 0x00, 0x03, 0x00]) });
+  assert.equal((await blockedExecutableResponse).status(), 415, 'executable attachment was not rejected');
+  await alice.page.locator('#toast').getByText(/blocked this executable or active-script attachment/i).waitFor();
+
   await alice.page.locator('#voice-record').click();
   await alice.page.locator('#voice-record.recording').waitFor({ timeout: 5000 });
   await wait(800);
