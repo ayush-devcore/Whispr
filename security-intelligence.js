@@ -16,6 +16,12 @@ const BRAND_DOMAINS = new Map([
   ['netflix', ['netflix.com']],
   ['sbi', ['sbi.co.in', 'onlinesbi.sbi']]
 ]);
+const DANGEROUS_UPLOAD_EXTENSIONS = new Set([
+  'exe', 'dll', 'sys', 'scr', 'com', 'bat', 'cmd', 'ps1', 'psm1',
+  'vbs', 'vbe', 'wsf', 'wsh', 'hta', 'msi', 'msp', 'jar', 'apk',
+  'sh', 'bash', 'zsh', 'command', 'desktop', 'reg', 'lnk', 'appx',
+  'dmg', 'pkg'
+]);
 const SUSPICIOUS_PATH_TERMS = [
   'verify', 'password', 'login', 'signin', 'account', 'wallet',
   'payment', 'claim', 'prize', 'gift', 'recovery', 'urgent',
@@ -109,3 +115,27 @@ export function inspectUrl(input) {
     reputationStatus: 'not_checked'
   };
 }
+
+/**
+ * Conservative attachment gate for known executable formats. This is not an
+ * antivirus scanner and does not inspect archives, macros, or file behavior.
+ */
+export function inspectAttachment(filename, signature = Buffer.alloc(0)) {
+  const safeName = String(filename || '').replace(/\\\\/g, '/').split('/').pop().toLowerCase();
+  const extension = /\\.([a-z0-9]{1,12})$/.exec(safeName)?.[1] || '';
+  if (DANGEROUS_UPLOAD_EXTENSIONS.has(extension)) {
+    return { blocked: true, reason: 'executable_or_script_extension', extension };
+  }
+  const header = Buffer.isBuffer(signature) ? signature : Buffer.from(signature || []);
+  const startsWith = (...bytes) => header.length >= bytes.length && bytes.every((byte, index) => header[index] === byte);
+  const isWindowsExecutable = startsWith(0x4d, 0x5a);
+  const isElfExecutable = startsWith(0x7f, 0x45, 0x4c, 0x46);
+  const isMachOExecutable = startsWith(0xfe, 0xed, 0xfa, 0xce) || startsWith(0xfe, 0xed, 0xfa, 0xcf) ||
+    startsWith(0xce, 0xfa, 0xed, 0xfe) || startsWith(0xcf, 0xfa, 0xed, 0xfe) ||
+    startsWith(0xca, 0xfe, 0xba, 0xbe) || startsWith(0xbe, 0xba, 0xfe, 0xca);
+  if (isWindowsExecutable || isElfExecutable || isMachOExecutable) {
+    return { blocked: true, reason: 'executable_binary_signature', extension };
+  }
+  return { blocked: false, reason: null, extension };
+}
+\n
