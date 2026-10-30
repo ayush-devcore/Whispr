@@ -12,7 +12,7 @@ import { createHmac } from 'node:crypto';
 import pg from 'pg';
 import webpush from 'web-push';
 import { createAIService } from './ai-service.js';
-import { extractHttpUrls, inspectUrl } from './security-intelligence.js';
+import { extractHttpUrls, inspectUrl, inspectAttachment } from './security-intelligence.js';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(root, 'data');
@@ -550,6 +550,16 @@ app.delete('/api/chats/:chatId/messages/:messageId', authorize, async (req, res)
 app.post('/api/chats/:chatId/files', authorize, (req, res, next) => { if (!db.chats.some((chat) => chat.id === req.params.chatId && chat.memberIds.includes(req.user.id))) return res.status(404).json({ error: 'Chat not found.' }); next(); }, upload.single('file'), async (req, res) => {
   const c = db.chats.find((x) => x.id === req.params.chatId && x.memberIds.includes(req.user.id)); if (!c || !req.file) return res.status(400).json({ error: 'A chat and file are required.' });
   const safeName = String(req.file.originalname || 'attachment').replace(/\\/g, '/').split('/').pop().replace(/[\r\n\0]/g, '').slice(0, 180) || 'attachment';
+  const signatureFile = fs.openSync(req.file.path, 'r');
+  const signatureBuffer = Buffer.alloc(16);
+  let signatureLength = 0;
+  try { signatureLength = fs.readSync(signatureFile, signatureBuffer, 0, signatureBuffer.length, 0); }
+  finally { fs.closeSync(signatureFile); }
+  const attachmentSafety = inspectAttachment(safeName, signatureBuffer.subarray(0, signatureLength));
+  if (attachmentSafety.blocked) {
+    fs.unlink(req.file.path, () => {});
+    return res.status(415).json({ error: 'Whispr blocked this executable or active-script attachment. Share a safe document or an approved media format instead. This check is not a full malware scan.' });
+  }
   const file = { id: id(), chatId: c.id, senderId: req.user.id, senderName: getUser(req).name, name: safeName, type: sniffContentType(req.file.path, req.file.mimetype), size: req.file.size, storageName: req.file.filename, createdAt: new Date().toISOString() }; db.files.push(file); await save(); io.to(`chat:${c.id}`).emit('file:new', { ...file, url: undefined }); res.status(201).json({ ...file, url: mediaUrl(file, req.user.id) });
 });
 app.get('/api/chats/:chatId/files', authorize, (req, res) => { const c = db.chats.find((x) => x.id === req.params.chatId && x.memberIds.includes(req.user.id)); if (!c) return res.status(404).json({ error: 'Chat not found.' }); res.json(db.files.filter((f) => f.chatId === c.id).map((file) => ({ ...file, url: mediaUrl(file, req.user.id) }))); });
