@@ -191,8 +191,8 @@ function aiConsent(req, res, next) { const prefs = aiPreferences(getUser(req)); 
 function consumeAIQuota(user, reserveConcurrency = true) {
   const today = new Date().toISOString().slice(0, 10);
   if (user.aiUsage?.date !== today) user.aiUsage = { date: today, count: 0 };
-  if (user.aiUsage.count >= aiDailyLimit) { const error = new Error('Your daily AI request limit has been reached. Try again tomorrow.'); error.status = 429; throw error; }
-  if (reserveConcurrency && activeAIRequests >= aiConcurrencyLimit) { const error = new Error('AI is busy right now. Please try again shortly.'); error.status = 429; throw error; }
+  if (user.aiUsage.count >= aiDailyLimit) { const error = new Error('Your daily AI request limit has been reached. Try again after the daily reset.'); error.status = 429; error.code = 'WHISPR_AI_DAILY_LIMIT'; throw error; }
+  if (reserveConcurrency && activeAIRequests >= aiConcurrencyLimit) { const error = new Error('AI is busy right now. Please try again shortly.'); error.status = 429; error.code = 'WHISPR_AI_CONCURRENCY_LIMIT'; throw error; }
   user.aiUsage.count += 1; activeAIRequests += 1;
 }
 async function withAI(user, feature, operation) {
@@ -213,15 +213,17 @@ function aiMessages(chat, userId, limit = aiMaxContext) {
 function aiRouteError(res, error) {
   if (error.code === 'AI_UNAVAILABLE') return res.status(503).json({ error: 'AI is unavailable. Check AI_ENABLED, AI_PROVIDER, and the matching provider API key on the server.' });
   if (error.code === 'AI_CONSENT_REVOKED') return res.status(403).json({ error: 'AI consent or this feature was disabled while the request was processing. No result was saved.' });
-  if (error.status === 429) return res.status(429).json({ error: 'An AI provider quota/rate limit or Whispr AI request limit was reached. Try again later or check the configured provider account.' });
+  if (error.code === 'WHISPR_AI_DAILY_LIMIT') return res.status(429).json({ error: `Your Whispr daily AI limit (${aiDailyLimit} requests) has been reached. It resets at 00:00 UTC.` });
+  if (error.code === 'WHISPR_AI_CONCURRENCY_LIMIT') return res.status(429).json({ error: 'Whispr is processing several AI requests right now. Wait a moment and retry.' });
   const status = Number.isInteger(error.status) ? error.status : null;
   const category = status === 401 ? 'credential_rejected' : status === 403 ? 'access_denied' : status === 429 ? 'rate_limited' : status >= 500 ? 'provider_error' : status ? 'request_rejected' : 'network_or_client_error';
   const headers = error.headers || error.response?.headers;
-  const rawRequestId = error.request_id || error.requestID || headers?.get?.('x-request-id') || headers?.['x-request-id'];
+  const rawRequestId = error.request_id || error.requestID || headers?.get?.('x-goog-request-id') || headers?.get?.('x-request-id') || headers?.['x-goog-request-id'] || headers?.['x-request-id'];
   const requestId = typeof rawRequestId === 'string' && /^[A-Za-z0-9._:-]{1,128}$/.test(rawRequestId) ? rawRequestId : null;
   const rawCode = typeof error.code === 'string' ? error.code : null;
   const providerCode = rawCode && /^[A-Za-z0-9_.-]{1,64}$/.test(rawCode) ? rawCode : null;
   console.warn('AI operation failed:', JSON.stringify({ provider: ai.providerName, model: ai.model, endpointHost: ai.diagnostics.endpointHost, credentialVariable: ai.diagnostics.credentialVariable, credentialPresent: ai.diagnostics.credentialPresent, httpStatus: status, category, providerCode, requestId }));
+  if (status === 429) return res.status(429).json({ error: `The ${ai.providerName} AI provider rate-limited or quota-limited this request. Check that provider account's quota and billing, then retry after it resets.` });
   if (status === 401 || status === 403) return res.status(503).json({ error: 'The AI provider rejected server authentication or access. Verify the selected provider, matching server key, key restrictions, and project access.' });
   if (status === 404) return res.status(503).json({ error: 'The configured AI model is unavailable to the selected provider account. Verify AI_MODEL and model access.' });
   return res.status(502).json({ error: 'AI could not complete that request. Your chat is unaffected; try again later.' });
