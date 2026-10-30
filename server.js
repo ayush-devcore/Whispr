@@ -12,6 +12,7 @@ import { createHmac } from 'node:crypto';
 import pg from 'pg';
 import webpush from 'web-push';
 import { createAIService } from './ai-service.js';
+import { extractHttpUrls, inspectUrl } from './security-intelligence.js';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(root, 'data');
@@ -185,7 +186,7 @@ function bootstrapTokenMatches(candidate) {
   const left = Buffer.from(candidate); const right = Buffer.from(expected);
   return left.length === right.length && crypto.timingSafeEqual(left, right);
 }
-function aiPreferences(user) { return user.aiPreferences || { enabled: false, smartReplies: false, scamAnalysis: false }; }
+function aiPreferences(user) { return user.aiPreferences || { enabled: false, smartReplies: false, scamAnalysis: false, linkAnalysis: false }; }
 function aiConsent(req, res, next) { const prefs = aiPreferences(getUser(req)); if (!prefs.enabled) return res.status(403).json({ error: 'Enable AI processing and consent in your profile settings first.' }); next(); }
 function consumeAIQuota(user, reserveConcurrency = true) {
   const today = new Date().toISOString().slice(0, 10);
@@ -318,7 +319,7 @@ app.get('/api/ai/preferences', authorize, (req, res) => res.set('Cache-Control',
 app.patch('/api/ai/preferences', authorize, async (req, res) => {
   const user = getUser(req); const current = aiPreferences(user);
   if (req.body.enabled === true && req.body.consent !== true) return res.status(400).json({ error: 'Confirm that enabled AI features may send selected message content to the configured external AI provider.' });
-  const allowed = ['enabled', 'smartReplies', 'scamAnalysis', 'summaries', 'translation', 'rewriting', 'actionExtraction', 'naturalSearch'];
+  const allowed = ['enabled', 'smartReplies', 'scamAnalysis', 'linkAnalysis', 'summaries', 'translation', 'rewriting', 'actionExtraction', 'naturalSearch'];
   const next = { ...current };
   for (const key of allowed) if (Object.hasOwn(req.body, key)) { if (typeof req.body[key] !== 'boolean') return res.status(400).json({ error: `AI preference ${key} must be true or false.` }); next[key] = req.body[key]; }
   if (next.enabled !== true) next.enabled = false;
@@ -355,6 +356,49 @@ app.post('/api/ai/messages/:messageId/analyze', authorize, aiConsent, async (req
     user.aiScamAnalyses[message.id] = analysis; await save();
     io.to(`user:${user.id}`).emit('ai:scam-analysis:updated', { chatId: chat.id, messageId: message.id, analysis }); res.json({ analysis, cached: false });
   } catch (error) { aiRouteError(res, error); } finally { aiJobs.delete(jobKey); }
+});
+app.post('/api/ai/messages/:messageId/link-check', authorize, aiConsent, async (req, res) => {
+  const user = getUser(req);
+  if (!aiPreferences(user).linkAnalysis) return res.status(403).json({ error: 'AI link safety checks are disabled in your AI preferences.' });
+  const message = db.messages.find((item) => item.id === req.params.messageId && !item.deletedForEveryone && !(item.deletedFor || []).includes(user.id));
+  const chat = message && db.chats.find((item) => item.id === message.chatId && item.memberIds.includes(user.id));
+  if (!message || !chat) return res.status(404).json({ error: 'Message not found.' });
+  const urls = extractHttpUrls(message.body, 5);
+  if (!urls.length) return res.status(400).json({ error: 'This message does not contain a supported HTTP or HTTPS link.' });
+  const localChecks = urls.map(inspectUrl);
+  const jobKey = `link-check:${user.id}:${message.id}`;
+  if (aiJobs.has(jobKey)) return res.status(409).json({ error: 'This message is already being checked. Try again shortly.' });
+  aiJobs.add(jobKey);
+  try {
+    const cacheKey = crypto.createHash('sha256').update(JSON.stringify({ operation: 'link-check', user: user.id, message: message.id, localChecks })).digest('hex');
+    const result = await cachedAI(cacheKey, () => withAI(user, 'linkAnalysis', async () => {
+      const assessment = await ai.linkAnalysis({ links: localChecks.map(({ url, hostname, localScore, severity, signals }) => ({ url, hostname, localScore, localSeverity: severity, localSignals: signals, reputationStatus: 'not_checked' })) });
+      const byUrl = new Map(assessment.links.map((item) => [item.url, item]));
+      return {
+        links: localChecks.map((local) => {
+          const model = byUrl.get(local.url);
+          const riskScore = Math.max(local.localScore, model?.riskScore || 0);
+          const severity = riskScore >= 85 ? 'critical' : riskScore >= 65 ? 'high' : riskScore >= 35 ? 'medium' : 'low';
+          return {
+            url: local.url,
+            hostname: local.hostname,
+            riskScore,
+            severity,
+            explanation: model?.explanation || (local.signals.length ? 'Local URL pattern checks found indicators that deserve review. The AI response did not assess this link.' : 'No obvious URL pattern was detected locally. This link has not been verified safe.'),
+            indicators: [...new Set([...local.signals, ...(model?.indicators || [])])],
+            recommendations: model?.recommendations?.length ? model.recommendations : ['Do not enter passwords, one-time codes, or payment details after following an unexpected link.', 'Open the service using its official app or a website address you type yourself.'],
+            uncertain: true,
+            reputationStatus: 'not_checked'
+          };
+        }),
+        assessedAt: new Date().toISOString(),
+        reputationStatus: 'not_checked',
+        note: 'This is a local pattern and AI review only. Whispr did not open the link or query a live threat-intelligence/reputation database.'
+      };
+    }));
+    res.set('Cache-Control', 'no-store').json(result);
+  } catch (error) { aiRouteError(res, error); }
+  finally { aiJobs.delete(jobKey); }
 });
 app.post('/api/ai/translate', authorize, aiConsent, async (req, res) => {
   const user = getUser(req); if (!aiPreferences(user).translation) return res.status(403).json({ error: 'Message translation is disabled in your AI preferences.' });
