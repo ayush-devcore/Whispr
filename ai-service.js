@@ -17,7 +17,7 @@ const schemas = {
   linkAnalysis: {
     name: 'whispr_link_analysis',
     schema: { type: 'object', properties: {
-      links: { type: 'array', maxItems: 5, items: { type: 'object', properties: {
+      links: { type: 'array', items: { type: 'object', properties: {
         url: { type: 'string' }, riskScore: { type: 'integer', minimum: 0, maximum: 100 },
         severity: { type: 'string', enum: ['low', 'medium', 'high', 'critical'] },
         explanation: { type: 'string' }, indicators: { type: 'array', items: { type: 'string' } },
