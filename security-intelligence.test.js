@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { extractHttpUrls, inspectUrl } from './security-intelligence.js';
+import { extractHttpUrls, inspectUrl, inspectAttachment } from './security-intelligence.js';
 
 test('extracts unique HTTP and HTTPS URLs and trims surrounding punctuation', () => {
   assert.deepEqual(
@@ -56,4 +56,21 @@ test('invalid URLs fail closed', () => {
   assert.deepEqual(result.signals, ['invalid_url']);
   assert.equal(result.localScore, 100);
   assert.equal(result.severity, 'critical');
+});
+
+test('blocks executable and active-script attachment extensions', () => {
+  for (const filename of ['setup.exe', 'payload.PS1', 'launch.bat', 'helper.dll', 'app.apk']) {
+    assert.equal(inspectAttachment(filename).blocked, true, filename + ' should be blocked');
+  }
+});
+
+test('blocks executable binary signatures even when disguised as a document', () => {
+  assert.equal(inspectAttachment('invoice.pdf', Buffer.from([0x4d, 0x5a, 0x90, 0x00])).blocked, true, 'PE signature should be blocked');
+  assert.equal(inspectAttachment('notes.txt', Buffer.from([0x7f, 0x45, 0x4c, 0x46])).blocked, true, 'ELF signature should be blocked');
+  assert.equal(inspectAttachment('report.pdf', Buffer.from([0xfe, 0xed, 0xfa, 0xcf])).blocked, true, 'Mach-O signature should be blocked');
+});
+
+test('allows ordinary document and image signatures while making no malware claim', () => {
+  assert.deepEqual(inspectAttachment('notes.txt', Buffer.from('hello')), { blocked: false, reason: null, extension: 'txt' });
+  assert.equal(inspectAttachment('photo.png', Buffer.from([0x89, 0x50, 0x4e, 0x47])).blocked, false);
 });
