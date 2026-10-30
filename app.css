@@ -570,3 +570,35 @@ body { height:var(--app-height,100dvh); overflow:hidden; }
   }
 }
 
+/* Link-safety assessment cards distinguish advisory risk levels without implying verification. */
+#ai-dialog .ai-link-result {
+  min-width: 0;
+  padding: 12px;
+  border: 2px solid #111;
+  background: #fff;
+  color: #111;
+  overflow-wrap: anywhere;
+}
+#ai-dialog .ai-link-result + .ai-link-result { margin-top: 8px; }
+#ai-dialog .ai-link-result.high,
+#ai-dialog .ai-link-result.critical { border-left: 8px solid #b42318; }
+#ai-dialog .ai-link-result.medium { border-left: 8px solid #b7791f; }
+#ai-dialog .ai-link-result.low { border-left: 8px solid #237a52; }
+#ai-dialog .ai-link-result-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+#ai-dialog .ai-link-result-top strong { font-size: .82rem; }
+#ai-dialog .ai-link-result-top span { font-size: .82rem; font-weight: 800; overflow-wrap: anywhere; }
+#ai-dialog .ai-link-url {
+  margin: 7px 0;
+  color: #5a554b;
+  font: .78rem/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+#ai-dialog .ai-link-result > p:not(.ai-link-url) { margin: 6px 0; }
+#ai-dialog .ai-link-result .ai-result-section { padding-top: 7px; }
+
