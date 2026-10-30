@@ -86,13 +86,13 @@ browserTest('Whispr browser journeys with synthetic users and fake media devices
   await alice.page.locator('#profile-name').fill('Alice Profile Updated');
   await alice.page.locator('#profile-bio').fill('Synthetic browser test profile');
   await alice.page.locator('#ai-consent').check();
-  for (const feature of ['smartReplies', 'scamAnalysis', 'summaries', 'translation', 'rewriting', 'actionExtraction', 'naturalSearch']) await alice.page.locator(`[data-ai-pref="${feature}"]`).check();
+  for (const feature of ['smartReplies', 'scamAnalysis', 'linkAnalysis', 'summaries', 'translation', 'rewriting', 'actionExtraction', 'naturalSearch']) await alice.page.locator(`[data-ai-pref="${feature}"]`).check();
   await alice.page.locator('#profile-form button[type="submit"], #profile-form menu button:not([value="cancel"])').last().click();
   await alice.page.locator('#profile-dialog').waitFor({ state: 'hidden' });
   assert.equal(await alice.page.locator('#me-name').textContent(), 'Alice Profile Updated');
   const savedAIPreferences = await alice.page.evaluate(async () => (await (await fetch('/api/ai/preferences', { headers: { Authorization: `Bearer ${localStorage.getItem('whispr_token')}` } })).json()).preferences);
   assert.equal(savedAIPreferences.enabled, true, 'AI consent did not persist through the profile UI');
-  for (const feature of ['smartReplies', 'scamAnalysis', 'summaries', 'translation', 'rewriting', 'actionExtraction', 'naturalSearch']) assert.equal(savedAIPreferences[feature], true, `AI preference ${feature} did not persist`);
+  for (const feature of ['smartReplies', 'scamAnalysis', 'linkAnalysis', 'summaries', 'translation', 'rewriting', 'actionExtraction', 'naturalSearch']) assert.equal(savedAIPreferences[feature], true, `AI preference ${feature} did not persist`);
   if (aiBrowserOptIn) {
     const status = await alice.page.evaluate(async () => (await (await fetch('/api/ai/status', { headers: { Authorization: `Bearer ${localStorage.getItem('whispr_token')}` } })).json()));
     assert.equal(status.configured, true, 'real AI provider is not configured in the isolated backend');
@@ -230,7 +230,7 @@ browserTest('Whispr browser journeys with synthetic users and fake media devices
   await alice.page.locator(`#chat-list [data-chat-id="${directChatId}"]`).click();
   await bob.page.locator(`#chat-list [data-chat-id="${directChatId}"]`).click();
 
-  await bob.page.locator('#message-input').fill('Synthetic security test notice: the fictional demo account is safe; please review this ordinary example message.');
+  await bob.page.locator('#message-input').fill('Synthetic security test notice: review this fictional example link https://paypal-login.example/verify?token=synthetic-e2e before entering any credentials.');
   await bob.page.locator('.send-btn').click();
   const scamTarget = alice.page.locator('#messages .msg-row').filter({ hasText: 'Synthetic security test notice' }); await scamTarget.waitFor();
 
@@ -266,13 +266,24 @@ browserTest('Whispr browser journeys with synthetic users and fake media devices
     await assertNewAIResponse('/api/ai/search', before, 'AI-assisted search');
     assert.ok((await alice.page.locator('#ai-search-result, .ai-search-result').count()) > 0, 'AI search did not render a matching message'); requestedRoutes.add('/api/ai/search');
     await alice.page.locator('#ai-close').click();
-    await scamTarget.locator('summary[aria-label="Message options"]').click();
+    const messageActions = scamTarget.locator('details.message-actions');
+    await messageActions.evaluate((element) => { element.open = true; });
+    const linkRoute = `/api/ai/messages/${await scamTarget.getAttribute('data-message-id')}/link-check`;
+    before = aiResponseCount(linkRoute);
+    await scamTarget.locator('[data-ai-link-check]').click();
+    await alice.page.locator('#ai-dialog').waitFor({ state: 'visible' });
+    await alice.page.locator('#ai-results .ai-link-result').waitFor({ timeout: 60000 });
+    await assertNewAIResponse(linkRoute, before, 'AI link safety analysis');
+    assert.match(await alice.page.locator('#ai-results').innerText(), /not query a live threat-intelligence\/reputation database/i);
+    requestedRoutes.add(linkRoute);
+    await alice.page.locator('#ai-close').click();
+    await messageActions.evaluate((element) => { element.open = true; });
     const scamRoute = `/api/ai/messages/${await scamTarget.getAttribute('data-message-id')}/analyze`;
     before = aiResponseCount(scamRoute);
     await scamTarget.locator('[data-ai-analyze]').click();
     await scamTarget.locator('.scam-warning').waitFor({ timeout: 60000 });
     await assertNewAIResponse(scamRoute, before, 'Scam analysis'); requestedRoutes.add(scamRoute);
-    await scamTarget.locator('summary[aria-label="Message options"]').click();
+    await messageActions.evaluate((element) => { element.open = true; });
     let translated = '';
     const translateDialogDone = new Promise((resolve) => {
       const handler = async (dialog) => { if (dialog.type() === 'prompt') await dialog.accept('Spanish'); else { translated = dialog.message(); await dialog.accept(); alice.page.off('dialog', handler); resolve(); } };
@@ -359,6 +370,6 @@ browserTest('Whispr browser journeys with synthetic users and fake media devices
   assert.ok(await bob.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'mobile chat has horizontal overflow');
   assert.deepEqual(diagnostics, [], `browser console or HTTP errors: ${diagnostics.join(', ')}`);
   console.log('PASS: browser auth, profile, realtime direct chat and receipts, deletion scopes, groups and membership, direct/group voice and video calls with live media tracks, image/audio/video uploads and playback, voice recording, reporting/admin, service worker install, and responsive layout.');
-  if (aiBrowserOptIn) console.log(`PASS: all seven AI operations returned HTTP success from the real ${aiProvider} provider through authenticated browser UI controls after consent was persisted.`);
+  if (aiBrowserOptIn) console.log(`PASS: all eight AI operations returned HTTP success from the real ${aiProvider} provider through authenticated browser UI controls after consent was persisted.`);
   else console.log(`SKIP: ${aiSkipReason}`);
 });
