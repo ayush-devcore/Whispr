@@ -1,33 +1,59 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createAIService } from './ai-service.js';
+import { createAIService, createProviderClient } from './ai-service.js';
 import { checkOpenRouterKey } from './openrouter-diagnostics.js';
+import { getAIIntegrationConfig, providerFailureDiagnostic } from './ai-provider.integration-config.js';
 
-const providerName = (process.env.AI_PROVIDER || 'openai').trim().toLowerCase();
-const keyName = providerName === 'openrouter' ? 'OPENROUTER_API_KEY' : providerName === 'openai' ? 'OPENAI_API_KEY' : null;
-const apiKey = keyName ? process.env[keyName] : undefined;
-const optedIn = process.env.RUN_AI_INTEGRATION === 'true';
-const enabled = process.env.AI_ENABLED !== 'false';
-const skipReason = !optedIn ? 'Set RUN_AI_INTEGRATION=true to authorize real provider calls.'
-  : !keyName ? 'AI_PROVIDER must be openai or openrouter.'
-    : !apiKey?.trim() ? `${keyName} is not configured.`
-      : !enabled ? 'AI_ENABLED=false disables provider calls.' : false;
+const config = getAIIntegrationConfig();
 
-async function safely(operation) {
+async function safely(operationName, operation) {
   try { return await operation(); }
-  catch (error) {
-    const status = Number.isInteger(error?.status) ? ` (HTTP ${error.status})` : '';
-    throw new Error(`Provider request failed${status}; provider details, credentials, and request content were suppressed.`);
-  }
+  catch (error) { throw new Error(JSON.stringify(providerFailureDiagnostic(error, config.providerName, operationName))); }
 }
 
-test(`real ${providerName} inference validates every Whispr AI operation with synthetic data`, { skip: skipReason, timeout: 180_000 }, async (t) => {
+test(`real ${config.providerName} inference validates every Whispr AI operation with synthetic data`, { skip: config.skipReason, timeout: 180_000 }, async (t) => {
   // No mock client is injected: this uses the configured provider's production SDK path and model.
-  const ai = createAIService();
+  const ai = createAIService({ providerName: config.providerName, apiKey: config.apiKey, model: config.model, enabled: config.enabled });
   assert.equal(ai.configured, true, 'configured SDK client should be available');
+  assert.equal(ai.diagnostics.endpointHost, config.endpointHost, 'integration provider endpoint does not match AI_PROVIDER');
+  assert.equal(ai.model, config.model, 'integration model does not match AI_MODEL');
 
-  if (providerName === 'openrouter') {
-    const diagnostic = await checkOpenRouterKey({ apiKey });
+  if (config.providerName === 'gemini') {
+    const gemini = createProviderClient({ providerName: 'gemini', apiKey: config.apiKey, timeoutMs: 20_000 });
+    let textOnlyPassed = false;
+    await t.test('Gemini text-only baseline', async () => {
+      const response = await safely('text-only baseline', () => gemini.models.generateContent({
+        model: config.model,
+        contents: 'Reply with the single word READY.',
+        config: { maxOutputTokens: 16, httpOptions: { timeout: 20_000, retryOptions: { attempts: 1 } } }
+      }));
+      assert.ok(typeof response.text === 'string' && response.text.trim().length > 0, 'Gemini returned no text for the baseline request.');
+      textOnlyPassed = true;
+    });
+    if (!textOnlyPassed) { t.diagnostic('Structured-output and Whispr operation probes were not sent because the text-only baseline failed.'); return; }
+
+    let minimalJsonPassed = false;
+    await t.test('Gemini minimal JSON schema baseline', async () => {
+      const response = await safely('minimal JSON schema baseline', () => gemini.models.generateContent({
+        model: config.model,
+        contents: 'Return an object where ok is true.',
+        config: {
+          responseMimeType: 'application/json',
+          responseJsonSchema: { type: 'object', properties: { ok: { type: 'boolean' } }, required: ['ok'], additionalProperties: false },
+          maxOutputTokens: 24,
+          httpOptions: { timeout: 20_000, retryOptions: { attempts: 1 } }
+        }
+      }));
+      let parsed;
+      try { parsed = JSON.parse(response.text); } catch { assert.fail('Gemini minimal JSON baseline did not return valid JSON.'); }
+      assert.equal(parsed.ok, true, 'Gemini minimal JSON baseline returned the wrong shape/value.');
+      minimalJsonPassed = true;
+    });
+    if (!minimalJsonPassed) { t.diagnostic('Whispr schema probes were not sent because the minimal JSON schema baseline failed.'); return; }
+  }
+
+  if (config.providerName === 'openrouter') {
+    const diagnostic = await checkOpenRouterKey({ apiKey: config.apiKey });
     await t.test('OpenRouter key endpoint accepts the configured credential', () => {
       assert.equal(diagnostic.category, 'credential_accepted', diagnostic.httpStatus
         ? `OpenRouter key check was rejected with HTTP ${diagnostic.httpStatus}.`
@@ -43,34 +69,34 @@ test(`real ${providerName} inference validates every Whispr AI operation with sy
   ];
 
   await t.test('smart replies', async () => {
-    const result = await safely(() => ai.smartReplies({ conversationType: 'direct', currentUser: 'Casey', history }));
+    const result = await safely('smart replies', () => ai.smartReplies({ conversationType: 'direct', currentUser: 'Casey', history }));
     assert.ok(Array.isArray(result.replies) && result.replies.length <= 3);
   });
 
   await t.test('scam analysis structured schema', async () => {
-    const result = await safely(() => ai.scamAnalysis({ target: { sender: 'Synthetic Sender', text: 'Synthetic security test: reply with your sample password at https://example.invalid to avoid a fictional account hold.' }, history: [] }));
+    const result = await safely('scam analysis', () => ai.scamAnalysis({ target: { sender: 'Synthetic Sender', text: 'Synthetic security test: reply with your sample password at https://example.invalid to avoid a fictional account hold.' }, history: [] }));
     assert.ok(Number.isInteger(result.riskScore) && result.riskScore >= 0 && result.riskScore <= 100);
     assert.equal(typeof result.uncertain, 'boolean');
     assert.ok(Array.isArray(result.categories) && Array.isArray(result.evidence) && Array.isArray(result.nextSteps));
   });
 
   await t.test('conversation summary structured schema', async () => {
-    const result = await safely(() => ai.summary({ conversationType: 'direct', messages: history, suppliedMessageCount: history.length, contextMayBeIncomplete: false }));
+    const result = await safely('conversation summary', () => ai.summary({ conversationType: 'direct', messages: history, suppliedMessageCount: history.length, contextMayBeIncomplete: false }));
     for (const field of ['topics', 'decisions', 'openQuestions', 'tasks', 'deadlines', 'keyPoints']) assert.ok(Array.isArray(result[field]), `summary.${field} should be an array`);
   });
 
   await t.test('translation', async () => {
-    const result = await safely(() => ai.translate('The sample meeting starts at noon.', 'Spanish'));
+    const result = await safely('translation', () => ai.translate('The sample meeting starts at noon.', 'Spanish'));
     assert.ok(result.trim().length > 0);
   });
 
   await t.test('draft rewriting', async () => {
-    const result = await safely(() => ai.rewrite('Send me the sample checklist today.', 'polite'));
+    const result = await safely('draft rewriting', () => ai.rewrite('Send me the sample checklist today.', 'polite'));
     assert.ok(result.trim().length > 0);
   });
 
   await t.test('action extraction structured schema', async () => {
-    const result = await safely(() => ai.actions({ messages: history, contextMayBeIncomplete: false }));
+    const result = await safely('action extraction', () => ai.actions({ messages: history, contextMayBeIncomplete: false }));
     assert.ok(Array.isArray(result.actions));
   });
 
@@ -79,7 +105,7 @@ test(`real ${providerName} inference validates every Whispr AI operation with sy
       { id: 'synthetic-1', conversation: 'Sample planning', sender: 'Morgan', timestamp: history[0].createdAt, text: history[0].text },
       { id: 'synthetic-2', conversation: 'Sample planning', sender: 'Casey', timestamp: history[1].createdAt, text: history[1].text }
     ];
-    const result = await safely(() => ai.search('What was Casey going to review?', candidates));
+    const result = await safely('AI-assisted search', () => ai.search('What was Casey going to review?', candidates));
     assert.ok(Array.isArray(result) && result.every((id) => candidates.some((candidate) => candidate.id === id)));
   });
 });

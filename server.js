@@ -31,8 +31,9 @@ const server = http.createServer(app);
 const io = new Server(server, { maxHttpBufferSize: 1_000_000 });
 const upload = multer({ dest: uploadDir, limits: { fileSize: 25 * 1024 * 1024 } });
 const pool = process.env.DATABASE_URL ? new pg.Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : undefined }) : null;
-const configuredAIProvider = (process.env.AI_PROVIDER || 'openai').trim().toLowerCase();
-const ai = createAIService({ providerName: configuredAIProvider, model: process.env.AI_MODEL || (configuredAIProvider === 'openrouter' ? 'openai/gpt-6-luna' : 'gpt-6-luna'), timeoutMs: Math.min(60_000, Math.max(1_000, Number(process.env.AI_REQUEST_TIMEOUT_MS) || 20_000)), maxOutputTokens: Math.min(4_000, Math.max(100, Number(process.env.AI_MAX_OUTPUT_TOKENS) || 700)) });
+const configuredAIProvider = (process.env.AI_PROVIDER || 'gemini').trim().toLowerCase();
+const defaultAIModel = configuredAIProvider === 'gemini' ? 'gemini-3.5-flash-lite' : configuredAIProvider === 'openrouter' ? 'openai/gpt-6-luna' : 'gpt-6-luna';
+const ai = createAIService({ providerName: configuredAIProvider, model: process.env.AI_MODEL || defaultAIModel, timeoutMs: Math.min(60_000, Math.max(1_000, Number(process.env.AI_REQUEST_TIMEOUT_MS) || 20_000)), maxOutputTokens: Math.min(4_000, Math.max(100, Number(process.env.AI_MAX_OUTPUT_TOKENS) || 700)) });
 console.info('AI configuration loaded:', JSON.stringify({ provider: ai.providerName, model: ai.model, endpointHost: ai.diagnostics.endpointHost, credentialVariable: ai.diagnostics.credentialVariable, credentialPresent: ai.diagnostics.credentialPresent, enabled: ai.diagnostics.enabled, clientConfigured: ai.configured }));
 const aiMaxContext = Math.min(100, Math.max(5, Number(process.env.AI_MAX_CONTEXT_MESSAGES) || 30));
 const aiDailyLimit = Math.min(500, Math.max(1, Number(process.env.AI_DAILY_USER_LIMIT) || 30));
@@ -211,7 +212,7 @@ function aiMessages(chat, userId, limit = aiMaxContext) {
 function aiRouteError(res, error) {
   if (error.code === 'AI_UNAVAILABLE') return res.status(503).json({ error: 'AI is unavailable. Check AI_ENABLED, AI_PROVIDER, and the matching provider API key on the server.' });
   if (error.code === 'AI_CONSENT_REVOKED') return res.status(403).json({ error: 'AI consent or this feature was disabled while the request was processing. No result was saved.' });
-  if (error.status === 429) return res.status(429).json({ error: 'AI is busy or your AI request limit has been reached. Try again later.' });
+  if (error.status === 429) return res.status(429).json({ error: 'An AI provider quota/rate limit or Whispr AI request limit was reached. Try again later or check the configured provider account.' });
   const status = Number.isInteger(error.status) ? error.status : null;
   const category = status === 401 ? 'credential_rejected' : status === 403 ? 'access_denied' : status === 429 ? 'rate_limited' : status >= 500 ? 'provider_error' : status ? 'request_rejected' : 'network_or_client_error';
   const headers = error.headers || error.response?.headers;
@@ -220,7 +221,8 @@ function aiRouteError(res, error) {
   const rawCode = typeof error.code === 'string' ? error.code : null;
   const providerCode = rawCode && /^[A-Za-z0-9_.-]{1,64}$/.test(rawCode) ? rawCode : null;
   console.warn('AI operation failed:', JSON.stringify({ provider: ai.providerName, model: ai.model, endpointHost: ai.diagnostics.endpointHost, credentialVariable: ai.diagnostics.credentialVariable, credentialPresent: ai.diagnostics.credentialPresent, httpStatus: status, category, providerCode, requestId }));
-  if (status === 401) return res.status(503).json({ error: 'The AI provider rejected server authentication. Verify the selected provider and server key, then restart Whispr after changing environment variables.' });
+  if (status === 401 || status === 403) return res.status(503).json({ error: 'The AI provider rejected server authentication or access. Verify the selected provider, matching server key, key restrictions, and project access.' });
+  if (status === 404) return res.status(503).json({ error: 'The configured AI model is unavailable to the selected provider account. Verify AI_MODEL and model access.' });
   return res.status(502).json({ error: 'AI could not complete that request. Your chat is unaffected; try again later.' });
 }
 function cachedAI(key, producer) {

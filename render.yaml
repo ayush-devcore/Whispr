@@ -26,13 +26,11 @@ services:
       - key: AI_ENABLED
         value: "false"
       - key: AI_PROVIDER
-        value: openrouter
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: OPENROUTER_API_KEY
+        value: gemini
+      - key: GEMINI_API_KEY
         sync: false
       - key: AI_MODEL
-        value: openai/gpt-6-luna
+        value: gemini-3.5-flash-lite
       - key: AI_REQUEST_TIMEOUT_MS
         sync: false
       - key: AI_MAX_OUTPUT_TOKENS
