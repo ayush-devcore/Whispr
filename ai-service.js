@@ -14,6 +14,17 @@ const schemas = {
       explanation: { type: 'string' }, evidence: { type: 'array', items: { type: 'string' } }, nextSteps: { type: 'array', items: { type: 'string' } }, uncertain: { type: 'boolean' }
     }, required: ['riskScore', 'severity', 'categories', 'explanation', 'evidence', 'nextSteps', 'uncertain'], additionalProperties: false }
   },
+  linkAnalysis: {
+    name: 'whispr_link_analysis',
+    schema: { type: 'object', properties: {
+      links: { type: 'array', maxItems: 5, items: { type: 'object', properties: {
+        url: { type: 'string' }, riskScore: { type: 'integer', minimum: 0, maximum: 100 },
+        severity: { type: 'string', enum: ['low', 'medium', 'high', 'critical'] },
+        explanation: { type: 'string' }, indicators: { type: 'array', items: { type: 'string' } },
+        recommendations: { type: 'array', items: { type: 'string' } }, uncertain: { type: 'boolean' }
+      }, required: ['url', 'riskScore', 'severity', 'explanation', 'indicators', 'recommendations', 'uncertain'], additionalProperties: false } }
+    }, required: ['links'], additionalProperties: false }
+  },
   summary: {
     name: 'whispr_conversation_summary',
     schema: { type: 'object', properties: {
@@ -114,6 +125,7 @@ export function createAIService({ client, enabled = process.env.AI_ENABLED !== '
     },
     smartReplies: (context) => structured('smartReplies', 'Write up to three distinct, concise, natural draft replies for the current user to consider. They must not be automatically sent. Reply in the conversation language and tone. Return an empty array if no reply is appropriate.', context, 250),
     scamAnalysis: (context) => structured('scamAnalysis', 'Assess the supplied message for scam indicators. Scores are uncertain risk estimates, not proof. Cite only exact short evidence present in the message/context. A lack of evidence should produce low risk and uncertainty. Never call a message safe with certainty.', context, 500),
+    linkAnalysis: (context) => structured('linkAnalysis', 'Assess only the supplied URLs and their precomputed local pattern signals. Never open, fetch, resolve, expand, or follow any supplied URL or redirect. Do not claim live reputation, blacklist, malware, or certificate checks were performed. Explain suspicious patterns with cautious language, distinguish a lack of obvious signals from proof of safety, and give practical verification advice. Respect the local risk signals; do not downgrade their significance. Mark every result uncertain.', context, 650),
     summary: (context) => structured('summary', 'Write a concise, useful summary for a person who wants to catch up quickly. Use only the supplied conversation messages and do not invent facts. Prioritize concrete topics, decisions, unanswered questions, commitments, tasks, dates, and important information. Treat invitations and direct questions as open questions until the messages show they were answered. Do not waste key points on routine greetings, acknowledgements, or small talk unless they materially matter. Do not narrate the conversation message by message. Keep keyPoints focused and non-repetitive. Put tasks only when someone clearly committed to an action; leave owner or dates unstated when not supported. Separate stated decisions from suggestions. Mark limitedContext true if the supplied subset may omit relevant history.', context, 800),
     translate: (text, language) => structured('text', 'Translate the supplied text faithfully into the requested language. Preserve meaning and tone; output only the translation.', { text, language }, 500).then((result) => result.text),
     rewrite: (text, tone) => structured('text', 'Rewrite the supplied draft in the requested tone without changing factual meaning. Output only the rewritten draft.', { text, tone }, 500).then((result) => result.text),
@@ -129,6 +141,23 @@ function validate(kind, value) {
   if (kind === 'scamAnalysis' && Number.isInteger(value.riskScore) && value.riskScore >= 0 && value.riskScore <= 100 && ['low', 'medium', 'high', 'critical'].includes(value.severity) && strings(value.categories, 80) && strings(value.evidence, 300) && strings(value.nextSteps, 300) && typeof value.explanation === 'string' && value.explanation.length <= 800 && typeof value.uncertain === 'boolean') {
     const expectedSeverity = value.riskScore >= 85 ? 'critical' : value.riskScore >= 65 ? 'high' : value.riskScore >= 35 ? 'medium' : 'low';
     return { ...value, severity: expectedSeverity, explanation: value.explanation.trim() };
+  }
+  if (kind === 'linkAnalysis' && Array.isArray(value.links) && value.links.length <= 5 && value.links.every((item) =>
+    item && typeof item.url === 'string' && item.url.length <= 2048 &&
+    Number.isInteger(item.riskScore) && item.riskScore >= 0 && item.riskScore <= 100 &&
+    ['low', 'medium', 'high', 'critical'].includes(item.severity) &&
+    typeof item.explanation === 'string' && item.explanation.length <= 800 &&
+    strings(item.indicators, 240) && strings(item.recommendations, 300) &&
+    typeof item.uncertain === 'boolean'
+  )) {
+    return { links: value.links.map((item) => ({
+      ...item,
+      severity: item.riskScore >= 85 ? 'critical' : item.riskScore >= 65 ? 'high' : item.riskScore >= 35 ? 'medium' : 'low',
+      explanation: item.explanation.trim(),
+      indicators: item.indicators.map((entry) => entry.trim()).filter(Boolean),
+      recommendations: item.recommendations.map((entry) => entry.trim()).filter(Boolean),
+      uncertain: true
+    })) };
   }
   if (kind === 'summary' && ['topics', 'decisions', 'openQuestions', 'tasks', 'deadlines', 'keyPoints'].every((key) => strings(value[key], 500)) && typeof value.limitedContext === 'boolean') return value;
   if (kind === 'text' && typeof value.text === 'string' && value.text.length <= 5000) return { text: value.text.trim() };
