@@ -344,7 +344,117 @@ $('#profile-form').addEventListener('submit', async (event) => {
   } catch (error) { $('#profile-error').textContent = error.message; }
 });
 
-function showAIToolResult(value) { $('#ai-results').textContent = typeof value === 'string' ? value : JSON.stringify(value, null, 2); }
+function renderAIList(target, items, emptyText) {
+  const list = document.createElement('ul');
+  list.className = 'ai-result-list';
+  if (Array.isArray(items) && items.length) {
+    for (const item of items) {
+      const row = document.createElement('li');
+      row.textContent = String(item);
+      list.append(row);
+    }
+  } else {
+    const empty = document.createElement('p');
+    empty.className = 'ai-result-empty';
+    empty.textContent = emptyText || 'None identified in the available messages.';
+    target.append(empty);
+    return;
+  }
+  target.append(list);
+}
+function renderAISection(target, title, items, emptyText) {
+  const section = document.createElement('section');
+  section.className = 'ai-result-section';
+  const heading = document.createElement('h3');
+  heading.textContent = title;
+  section.append(heading);
+  renderAIList(section, items, emptyText);
+  target.append(section);
+}
+function showAIToolResult(value) {
+  const output = $('#ai-results');
+  output.replaceChildren();
+  if (typeof value === 'string') {
+    output.textContent = value;
+    return;
+  }
+  if (!value || typeof value !== 'object') {
+    output.textContent = 'No result was returned.';
+    return;
+  }
+
+  const summary = value.summary && typeof value.summary === 'object' ? value.summary : null;
+  if (summary) {
+    const heading = document.createElement('h3');
+    heading.className = 'ai-result-title';
+    heading.textContent = 'Conversation summary';
+    output.append(heading);
+    if (Number.isFinite(value.messageCount)) {
+      const meta = document.createElement('p');
+      meta.className = 'ai-result-meta';
+      meta.textContent = 'Based on ' + value.messageCount + ' recent message' + (value.messageCount === 1 ? '' : 's');
+      output.append(meta);
+    }
+    renderAISection(output, 'Topics discussed', summary.topics);
+    renderAISection(output, 'Decisions', summary.decisions);
+    renderAISection(output, 'Open questions', summary.openQuestions);
+    renderAISection(output, 'Action items', summary.tasks);
+    renderAISection(output, 'Deadlines', summary.deadlines);
+    renderAISection(output, 'Key points', summary.keyPoints);
+    if (value.limitedContext || summary.limitedContext) {
+      const note = document.createElement('p');
+      note.className = 'ai-result-note';
+      note.textContent = 'This summary uses a limited recent-message window and may not include earlier conversation details.';
+      output.append(note);
+    }
+    return;
+  }
+
+  if (Array.isArray(value.actions)) {
+    const heading = document.createElement('h3');
+    heading.className = 'ai-result-title';
+    heading.textContent = 'Action items';
+    output.append(heading);
+    if (!value.actions.length) {
+      const empty = document.createElement('p');
+      empty.className = 'ai-result-empty';
+      empty.textContent = 'No clear action items were found in the available messages.';
+      output.append(empty);
+      return;
+    }
+    for (const item of value.actions) {
+      const card = document.createElement('article');
+      card.className = 'ai-action-card';
+      const action = document.createElement('p');
+      action.className = 'ai-action-text';
+      action.textContent = item.action || 'Unspecified action';
+      card.append(action);
+      const details = [item.owner && 'Owner: ' + item.owner, item.dueDate && 'Due: ' + item.dueDate].filter(Boolean);
+      if (details.length) {
+        const meta = document.createElement('p');
+        meta.className = 'ai-result-meta';
+        meta.textContent = details.join(' · ');
+        card.append(meta);
+      }
+      if (Array.isArray(item.evidence) && item.evidence.length) {
+        const evidence = document.createElement('p');
+        evidence.className = 'ai-result-evidence';
+        evidence.textContent = 'Evidence: ' + item.evidence.join(' · ');
+        card.append(evidence);
+      }
+      if (item.uncertain) {
+        const note = document.createElement('p');
+        note.className = 'ai-result-note';
+        note.textContent = 'This action is uncertain and should be confirmed.';
+        card.append(note);
+      }
+      output.append(card);
+    }
+    return;
+  }
+
+  output.textContent = JSON.stringify(value, null, 2);
+}
 let lastSmartReplyKey = '';
 async function maybeLoadSmartReplies(chatId, messageId) {
   if (!aiConfigured || !aiPrefs.enabled || !aiPrefs.smartReplies || chatId !== activeChat?.id || !messageId) return;
