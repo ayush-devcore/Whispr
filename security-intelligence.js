@@ -35,7 +35,7 @@ export function extractHttpUrls(text, limit = 5) {
     const normalized = candidate.toLowerCase().startsWith('www.') ? 'https://' + candidate : candidate;
     let parsed;
     try { parsed = new URL(normalized); } catch { continue; }
-    if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname || parsed.username || parsed.password) continue;
+    if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname) continue;
     const canonical = parsed.href;
     if (seen.has(canonical)) continue;
     seen.add(canonical);
@@ -81,7 +81,7 @@ export function inspectUrl(input) {
   const labels = hostname.split('.').filter(Boolean);
   if (labels.length >= 5) add('deeply_nested_hostname', 10);
 
-  const pathAndQuery = (parsed.pathname + ' ' + parsed.search).toLowerCase();
+  const pathAndQuery = (parsed.pathname + ' ' + [...parsed.searchParams.keys()].join(' ')).toLowerCase();
   const matchedTerms = SUSPICIOUS_PATH_TERMS.filter((term) => new RegExp('(?:^|[^a-z0-9])' + term + '(?:[^a-z0-9]|$)', 'i').test(pathAndQuery));
   if (matchedTerms.length) add('sensitive_or_urgent_url_path', Math.min(24, matchedTerms.length * 8));
 
@@ -95,8 +95,13 @@ export function inspectUrl(input) {
 
   score = Math.min(100, score);
   const severity = score >= 85 ? 'critical' : score >= 65 ? 'high' : score >= 35 ? 'medium' : 'low';
+  const displayUrl = new URL(parsed.href);
+  displayUrl.username = '';
+  displayUrl.password = '';
+  displayUrl.hash = '';
+  for (const key of [...displayUrl.searchParams.keys()]) displayUrl.searchParams.set(key, '[redacted]');
   return {
-    url: parsed.href.slice(0, 2048),
+    url: displayUrl.href.slice(0, 2048),
     hostname,
     localScore: score,
     severity,
