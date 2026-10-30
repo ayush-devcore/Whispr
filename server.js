@@ -37,7 +37,7 @@ const defaultAIModel = configuredAIProvider === 'gemini' ? 'gemini-3.5-flash-lit
 const ai = createAIService({ providerName: configuredAIProvider, model: process.env.AI_MODEL || defaultAIModel, timeoutMs: Math.min(60_000, Math.max(1_000, Number(process.env.AI_REQUEST_TIMEOUT_MS) || 20_000)), maxOutputTokens: Math.min(4_000, Math.max(100, Number(process.env.AI_MAX_OUTPUT_TOKENS) || 700)) });
 console.info('AI configuration loaded:', JSON.stringify({ provider: ai.providerName, model: ai.model, endpointHost: ai.diagnostics.endpointHost, credentialVariable: ai.diagnostics.credentialVariable, credentialPresent: ai.diagnostics.credentialPresent, enabled: ai.diagnostics.enabled, clientConfigured: ai.configured }));
 const aiMaxContext = Math.min(100, Math.max(5, Number(process.env.AI_MAX_CONTEXT_MESSAGES) || 30));
-const aiDailyLimit = Math.min(500, Math.max(1, Number(process.env.AI_DAILY_USER_LIMIT) || 30));
+const aiDailyLimit = Math.min(500, Math.max(1, Number(process.env.AI_DAILY_USER_LIMIT) || 60));
 const cacheTtlValue = process.env.AI_CACHE_TTL_SECONDS === undefined ? 120 : Number(process.env.AI_CACHE_TTL_SECONDS);
 const aiCacheTtlMs = Math.min(3600, Math.max(0, Number.isFinite(cacheTtlValue) ? cacheTtlValue : 120)) * 1000;
 const aiCache = new Map();
