@@ -55,6 +55,8 @@ OpenRouter and direct OpenAI remain supported when explicitly selected with `AI_
 
 To deliver incoming-call notifications while Whispr is in the background or closed, configure Web Push VAPID credentials: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` (a `mailto:` contact or your HTTPS site URL). Generate a key pair with `node --input-type=module -e "import webpush from 'web-push'; console.log(webpush.generateVAPIDKeys())"`, then add the public/private values and subject to the Render environment. Users must press the bell button once on each device/browser to grant notification permission and subscribe. Clicking a call notification opens the app to its incoming-call screen; answering still requires microphone/camera permission. Calls waiting longer than 45 seconds expire.
 
+The chat upload endpoint also blocks a conservative list of executable/active-script file extensions and detects common Windows PE, ELF, and Mach-O executable signatures, including when a binary is renamed with a document extension. This is an upload risk reduction, not antivirus: it does not inspect archive contents, Office macros, scripts hidden in arbitrary data formats, or file behavior. Users should still only open files they trust.
+
 The app stores its runtime data in `data/whispr.json` and uploaded files in `uploads/`; attach persistent storage for both directories in production. These are intentionally ignored by Git so no user content is shipped in the repository.
 
 ## Group membership
