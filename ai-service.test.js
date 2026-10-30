@@ -160,6 +160,31 @@ test('search results are restricted to the supplied authorized candidate IDs', a
   assert.deepEqual(await ai.search('the project date', [{ id: 'allowed', text: 'Friday' }]), ['allowed']);
 });
 
+test('AI link analysis returns bounded structured results and normalizes risk severity', async () => {
+  const mock = mockClient({ links: [{
+    url: 'https://paypal-login.example/verify',
+    riskScore: 78,
+    severity: 'low',
+    explanation: 'The hostname resembles a brand login page.',
+    indicators: ['possible brand impersonation'],
+    recommendations: ['Open the official website manually.'],
+    uncertain: false
+  }] });
+  const ai = createAIService({ client: mock.client, providerName: 'openai' });
+  const result = await ai.linkAnalysis({ links: [{ url: 'https://paypal-login.example/verify', signals: ['possible_brand_impersonation'] }] });
+  assert.equal(result.links[0].severity, 'high');
+  assert.equal(result.links[0].uncertain, true);
+  assert.equal(result.links[0].url, 'https://paypal-login.example/verify');
+  assert.match(mock.requests[0][0].instructions, /Never open, fetch, resolve, expand, or follow/);
+});
+
+test('AI link analysis rejects malformed or oversized structured output', async () => {
+  const malformed = createAIService({ client: mockClient({ links: [{ url: 'https://example.com', riskScore: 101, severity: 'critical', explanation: '', indicators: [], recommendations: [], uncertain: true }] }).client, providerName: 'openai' });
+  await assert.rejects(malformed.linkAnalysis({ links: [] }), /failed validation/);
+  const tooMany = createAIService({ client: mockClient({ links: Array.from({ length: 6 }, () => ({ url: 'https://example.com', riskScore: 0, severity: 'low', explanation: 'No obvious pattern.', indicators: [], recommendations: [], uncertain: true })) }).client, providerName: 'openai' });
+  await assert.rejects(tooMany.linkAnalysis({ links: [] }), /failed validation/);
+});
+
 test('provider failures are surfaced without fabricating a result', async () => {
   const client = { responses: { create: async () => { const error = new Error('private prompt details'); error.status = 429; throw error; } } };
   const ai = createAIService({ client, providerName: 'openai' });
