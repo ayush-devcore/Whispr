@@ -41,6 +41,16 @@ test('ordinary HTTPS host has no local heuristic signals but is not declared saf
   assert.equal(result.reputationStatus, 'not_checked');
 });
 
+test('redacts URL credentials, query values and fragments before provider analysis', () => {
+  const [candidate] = extractHttpUrls('Use https://alice:secret@example.com/reset?token=super-secret#private');
+  const inspected = inspectUrl(candidate);
+  assert.equal(inspected.url, 'https://example.com/reset?token=%5Bredacted%5D');
+  assert.ok(inspected.signals.includes('embedded_credentials'));
+  assert.equal(inspected.url.includes('secret'), false);
+  assert.equal(inspected.url.includes('super-secret'), false);
+  assert.equal(inspected.url.includes('private'), false);
+});
+
 test('invalid URLs fail closed', () => {
   const result = inspectUrl('not a URL');
   assert.deepEqual(result.signals, ['invalid_url']);
