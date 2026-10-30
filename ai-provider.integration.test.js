@@ -80,6 +80,25 @@ test(`real ${config.providerName} inference validates every Whispr AI operation 
     assert.ok(Array.isArray(result.categories) && Array.isArray(result.evidence) && Array.isArray(result.nextSteps));
   });
 
+  await t.test('AI link safety analysis schema', async () => {
+    const result = await safely('AI link safety analysis', () => ai.linkAnalysis({
+      links: [{
+        url: 'https://paypal-login.example/verify?token=%5Bredacted%5D',
+        hostname: 'paypal-login.example',
+        localScore: 69,
+        localSeverity: 'high',
+        localSignals: ['possible_brand_impersonation', 'sensitive_or_urgent_url_path'],
+        reputationStatus: 'not_checked'
+      }]
+    }));
+    assert.ok(Array.isArray(result.links) && result.links.length <= 5);
+    for (const link of result.links) {
+      assert.ok(Number.isInteger(link.riskScore) && link.riskScore >= 0 && link.riskScore <= 100);
+      assert.ok(['low', 'medium', 'high', 'critical'].includes(link.severity));
+      assert.equal(typeof link.uncertain, 'boolean');
+    }
+  });
+
   await t.test('conversation summary structured schema', async () => {
     const result = await safely('conversation summary', () => ai.summary({ conversationType: 'direct', messages: history, suppliedMessageCount: history.length, contextMayBeIncomplete: false }));
     for (const field of ['topics', 'decisions', 'openQuestions', 'tasks', 'deadlines', 'keyPoints']) assert.ok(Array.isArray(result[field]), `summary.${field} should be an array`);
