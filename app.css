@@ -412,3 +412,82 @@ body { height:var(--app-height,100dvh); overflow:hidden; }
 .group-member-row { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .45rem .55rem; border: 1px solid var(--line, #222); border-radius: .55rem; }
 .group-member-row button, #manage-group-add, #leave-group { min-height: 2rem; padding: .35rem .65rem; border: 1px solid currentColor; border-radius: .4rem; background: transparent; color: inherit; cursor: pointer; }
 #leave-group { margin-top: .6rem; color: #b42318; }
+
+/* AI dialog layout correction: keep modal and its contents within the viewport. */
+#ai-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(92vw, 760px);
+  min-width: 0;
+  max-width: 760px;
+  max-height: min(88dvh, 820px);
+  padding: clamp(16px, 2.5vw, 28px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+#ai-dialog .ai-toolbox {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+#ai-dialog .ai-toolbox > *,
+#ai-dialog .ai-toolbox pre {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+#ai-dialog .ai-tool-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+#ai-dialog .ai-search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  min-width: 0;
+}
+#ai-dialog .ai-search-row input {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+#ai-dialog #ai-results {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  max-height: min(38vh, 320px);
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
+}
+#ai-dialog menu {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+@media (max-width: 720px) {
+  #ai-dialog {
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    max-height: calc(var(--app-height, 100dvh) - 24px);
+    padding: 14px;
+  }
+  #ai-dialog .ai-tool-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #ai-dialog .ai-tool-actions button {
+    width: 100%;
+    white-space: normal;
+  }
+  #ai-dialog .ai-search-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
