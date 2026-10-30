@@ -121,7 +121,7 @@ export function inspectUrl(input) {
  * antivirus scanner and does not inspect archives, macros, or file behavior.
  */
 export function inspectAttachment(filename, signature = Buffer.alloc(0)) {
-  const safeName = String(filename || '').replace(/\\\\/g, '/').split('/').pop().toLowerCase();
+  const safeName = String(filename || '').replace(/\\/g, '/').split('/').pop().toLowerCase();
   const extension = /\\.([a-z0-9]{1,12})$/.exec(safeName)?.[1] || '';
   if (DANGEROUS_UPLOAD_EXTENSIONS.has(extension)) {
     return { blocked: true, reason: 'executable_or_script_extension', extension };
@@ -138,4 +138,4 @@ export function inspectAttachment(filename, signature = Buffer.alloc(0)) {
   }
   return { blocked: false, reason: null, extension };
 }
-\n
+
